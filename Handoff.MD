@@ -10,6 +10,7 @@ last-synced: `5be8dab · Claude/fal VLM provider checkpoint ready`
 - ✅ Visual QC tries free Nemotron, retries retryable failures, falls back to Qwen, and opens a 15-minute primary circuit after failure so one unavailable model does not stall every asset.
 - ✅ Phase 0 accepts image references only; every generated image is capped at 10 MB so Claude and VLM downstream steps can consume it.
 - ✅ Verification: 8 test files / 27 tests, TypeScript, production build, 3 valid Mermaid diagrams, and 0 npm vulnerabilities.
+- ✅ Full FMEA at `a6aa51e`: 0 P0, 0 P1, 17 tracked P2 findings in `docs/FMEA.md`.
 
 ## Live dependency status
 - ✅ Postgres, Redis, public Supabase Storage, Anthropic, fal generation, and fal VLM endpoint pass live preflight; Claude real inference and all three structured agent contracts passed smoke tests.
