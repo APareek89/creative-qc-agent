@@ -42,7 +42,7 @@ E-commerce teams need lots of near-identical, on-brand creative: **multiple cata
 
 **A reasoning agent and visual evidence model do the work after calibration:**
 - **Prompt-Synthesis Agent (Claude Sonnet 5):** looks at the 5 human-approved images (+ rejects as negatives), infers *why* they're good, and emits a **priority-ordered prompt/param list** — the "recipe" that reliably reproduces approved quality. P1 is the best bet; P2…Pn are fallbacks that vary strategy.
-- **QC evidence + judge:** fal/OpenRouter runs free `nvidia/nemotron-nano-12b-v2-vl:free` first (then low-cost `qwen/qwen3-vl-8b-instruct` if needed) to extract only visible facts, fidelity changes, defects, and style similarity. Claude Sonnet 5 converts that evidence into per-criterion scores and specific written feedback. Deterministic code makes pass/fail and retry decisions.
+- **QC evidence + judge:** fal/OpenRouter runs free `nvidia/nemotron-nano-12b-v2-vl:free` first (then low-cost `qwen/qwen3-vl-8b-instruct` if needed) to extract preliminary visible facts, fidelity changes, defects, and style similarity. Claude Sonnet 5 independently cross-checks that evidence against the source and candidate pixels, then returns per-criterion scores and specific written feedback. Deterministic code makes pass/fail and retry decisions.
 
 ## 3. Users & use cases (Phase 0 = e-commerce images only)
 
@@ -58,10 +58,10 @@ E-commerce teams need lots of near-identical, on-brand creative: **multiple cata
 | **Generation Worker** | cheap/free gen (see §6) | Produce an asset from a given prompt/params (text-to-image or, for SKU→lifestyle, **image-to-image / inpainting** on the source). |
 | **Prompt-Synthesis Agent** | Claude Sonnet 5 | From the 5 approved (+ rejected) samples → a ranked **priority prompt list** + tightened rubric. Re-runnable if quality drifts mid-batch. |
 | **Visual Evidence Model** | fal/OpenRouter Nemotron; Qwen fallback | Compare source, candidate, and approved references → visible product differences, technical issues, and 0–1 similarity evidence. Never makes the final workflow decision. |
-| **QC Reasoning Agent** | Claude Sonnet 5 | Convert visual evidence + rubric into per-criterion scores and written correction feedback. Deterministic policy code makes pass/fail. |
+| **QC Reasoning Agent** | Claude Sonnet 5 | Cross-check source and candidate pixels against preliminary VLM evidence + rubric, then return per-criterion scores and written correction feedback. Deterministic policy code makes pass/fail. |
 | **Orchestrator** | LangGraph state machine | Runs the per-asset loop: P1 → QC → (feedback-revise ≤K \| next priority prompt) → cap attempts/$ → accept or flag. Manages calibration → autonomous transition, batching, cost caps, retries, escalation. |
 
-**Similarity check (technical):** the VLM reports separate product-identity and approved-style similarity estimates alongside concrete differences. Claude reasons over that evidence, while deterministic threshold code enforces the fidelity floor and blended pass score.
+**Similarity check (technical):** the VLM reports separate product-identity and approved-style similarity estimates alongside concrete differences. Claude verifies the evidence against the source and candidate images, while deterministic threshold code enforces the fidelity floor and blended pass score.
 
 **Per-asset decision policy (default, tunable):** try P1 → QC. On fail: feedback-guided retry of the current prompt up to **K=2**; if still failing, advance to the next priority prompt; **total cap N=5 attempts** and a **$-cap per asset**; exhausting caps → `needs_review` (never blocks the batch).
 
@@ -83,7 +83,7 @@ Stateless web tier; workers scale independently; idempotent jobs; **dead-letter 
 
 ## 6. Models — good QC, cheap generation (your constraint)
 
-**Reasoning:** Claude Sonnet 5 for Spec, Prompt-Synthesis, and final QC grading, using schema-constrained JSON outputs.
+**Reasoning:** Claude Sonnet 5 for Spec, Prompt-Synthesis, and final visual QC grading, using image inputs plus schema-constrained JSON outputs.
 
 **Visual QC:** `nvidia/nemotron-nano-12b-v2-vl:free` through fal/OpenRouter is the zero-token-cost primary visual evidence model. `qwen/qwen3-vl-8b-instruct` is the automatic low-cost fallback when the free route is unavailable or malformed. The free route may log inputs, so it is a Phase 0 cost choice rather than the future private-enterprise default.
 
@@ -149,7 +149,7 @@ Next.js (dashboard) · Node worker service · **LangGraph** orchestrator · Bull
 - **P3 — Generation worker.** One provider (e.g., Flux-schnell img2img). A worker consumes the queue, generates a candidate for an asset, stores output. *Teach: queue/worker, idempotency, cost tracking.*
 - **P4 — Calibration UI.** Screen 2: generate candidates for a few items, human approves 5 (reject w/ notes), persist approvals.
 - **P5 — Prompt-Synthesis Agent.** Claude Sonnet 5: 5 approved (+ rejects) → ranked priority prompts + tightened rubric; store in `priority_prompts`. Reveal them in the Recipe panel.
-- **P6 — QC agents.** fal/OpenRouter VLM extracts source/candidate/reference evidence; Claude grades it against the rubric; deterministic code applies pass/fail thresholds. Show the QC panel.
+- **P6 — QC agents.** fal/OpenRouter VLM extracts source/candidate/reference evidence; Claude verifies it against source/candidate pixels and grades the rubric; deterministic code applies pass/fail thresholds. Show the QC panel.
 - **P7 — Orchestrator (LangGraph).** The autonomous per-asset loop: P1 → QC → feedback-revise ≤K → next priority prompt → caps → accept/needs_review. Wire calibration→autonomous transition + per-batch cost cap + DLQ.
 - **P8 — Batch Board + Asset Detail.** Screens 3 & 4 with live status; Screen 5 recipe win-rates.
 - **P9 — Delivery + scale.** Screen 6 (zip/CDN); `render.yaml` (web+worker+redis+db autoscaling), rate limits, idempotency, `SCALING.md`.

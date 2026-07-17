@@ -63,7 +63,9 @@ const anthropicResponseSchema = z.object({
   content: z.array(z.object({
     type: z.string(),
     text: z.string().optional(),
+    refusal: z.string().optional(),
   })),
+  stop_reason: z.string().nullable().optional(),
   usage: z.object({
     input_tokens: z.number(),
     output_tokens: z.number(),
@@ -190,7 +192,13 @@ async function structuredResponse<T extends z.ZodType>(
   }
   const payload = anthropicResponseSchema.parse(await response.json());
   const text = payload.content.find((block) => block.type === "text")?.text;
-  if (!text) throw new Error("Anthropic returned no structured text response.");
+  if (!text) {
+    const refusal = payload.content.find((block) => block.refusal)?.refusal;
+    const contentTypes = [...new Set(payload.content.map((block) => block.type))].join(", ") || "none";
+    throw new Error(refusal
+      ? `Anthropic refused the structured response: ${refusal}`
+      : `Anthropic returned no structured text response (stop_reason=${payload.stop_reason ?? "unknown"}, content=${contentTypes}).`);
+  }
   console.info(JSON.stringify({
     event: "anthropic_agent_completed",
     requestId: payload.id,
@@ -273,7 +281,7 @@ Human notes:\n${notes || "No written notes."}`;
   };
 }
 
-export async function reasonAboutQc(batch: Batch, evidence: VlmQcEvidence): Promise<AnthropicQcJudgment> {
+export async function reasonAboutQc(batch: Batch, evidence: VlmQcEvidence, sourceUrl?: string, outputUrl?: string): Promise<AnthropicQcJudgment> {
   if (isDemoMode) {
     return {
       scores: { productFidelity: 94, composition: 89, lighting: 92, brandStyle: 91, technicalQuality: 90 },
@@ -283,12 +291,18 @@ export async function reasonAboutQc(batch: Batch, evidence: VlmQcEvidence): Prom
     };
   }
   if (!batch.spec) throw new Error("A Creative Spec is required before QC.");
-  const prompt = `Act as the final QC reasoner. The separate vision model supplied observable evidence; do not claim to have seen the images yourself.
+  if (!sourceUrl || !outputUrl) throw new Error("Source and candidate images are required for final visual QC.");
+  const approvedUrls = batch.calibrationCandidates
+    .filter((candidate) => candidate.decision === "approved")
+    .map((candidate) => candidate.outputUrl)
+    .slice(0, 4);
+  const prompt = `Act as the final visual QC reasoner. Inspect the supplied images in order: image 1 is the source-product identity truth, image 2 is the generated candidate, and later images are human-approved style examples only.
+The separate vision model supplied preliminary evidence. Treat it as advisory: verify every claim against the images and correct it when the visible pixels disagree. Read candidate label and logo text independently; never infer or copy text from the source. Any distorted, missing, substituted, or illegible product text is a product-fidelity failure.
 Score the generated candidate against the Creative Spec. Every score must use a 0–100 scale, where 95 means excellent; never return 0–1 probability decimals for scores. Product fidelity is strict: changed text/logo, missing parts, wrong color/material, or altered geometry must be penalized. Feedback must be concise and directly usable by the image-edit model. Return scores and corrections only; deterministic application code will make the pass/fail decision.
 
 Creative Spec: ${JSON.stringify(batch.spec)}
 Vision evidence: ${JSON.stringify(evidence)}`;
-  const judgment = await structuredResponse(qcSchema, prompt, [], 1_800);
+  const judgment = await structuredResponse(qcSchema, prompt, imageBlocks([sourceUrl, outputUrl, ...approvedUrls], 6), 4_000);
   const normalized = normalizeQcJudgmentScale(judgment);
   if (normalized !== judgment) {
     console.warn(JSON.stringify({ event: "anthropic_qc_score_scale_normalized", model: env.ANTHROPIC_MODEL }));

@@ -4,7 +4,7 @@
 
 **Analyzed at**: `b1c49bc` plus the live-workflow score-scale fix pending checkpoint
 **Scan scope**: provider migration plus one complete live Render batch · **Product context**: approve five source-faithful e-commerce examples, then generate, visually inspect, reason, revise, and deliver up to 200 ratio-specific outputs autonomously (`Creative-QC-Agent-PRD.md`)
-**Failure modes found**: 17 open (0 P0, 0 P1, 17 P2); 9 provider/live-workflow modes are closed
+**Failure modes found**: 17 open (0 P0, 0 P1, 17 P2); 10 provider/live-workflow modes are closed
 
 | # | Component | Failure Mode | Effect | Root Cause | Recommended action | S | O | D | RPN | Priority |
 |---|---|---|---|---|---|---:|---:|---:|---:|---|
@@ -32,7 +32,7 @@ None open.
 
 ### 🟡 P1 — Fix this sprint
 
-None open. The migration closed quota-bound Gemini startup, schema-incompatible Anthropic output contracts, malformed Qwen evidence, repeated primary VLM failures, silent video-reference acceptance, non-HTTPS Anthropic images, and oversized downstream agent inputs before deployment. The live batch then exposed and closed one additional P1: semantically valid 0–1 Claude QC subscores could pass 0–100 range validation and force false retries. The provider now normalizes a complete 0–1 score vector, explicitly prompts the 0–100 unit, logs normalization, and has two scale-regression tests.
+None open. The migration closed quota-bound Gemini startup, schema-incompatible Anthropic output contracts, malformed Qwen evidence, repeated primary VLM failures, silent video-reference acceptance, non-HTTPS Anthropic images, and oversized downstream agent inputs before deployment. The live batch then exposed and closed two additional P1s: semantically valid 0–1 Claude QC subscores could force false retries, and confidently wrong low-cost VLM evidence could otherwise become a false pass. Scores are now normalized at the provider boundary, and Claude independently inspects source/candidate pixels before returning the final structured judgment. An adversarial live replay confirmed that Claude overrode optimistic evidence and penalized visibly corrupted label text.
 
 ### 🟢 P2 — Track / next sprint
 

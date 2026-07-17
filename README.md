@@ -1,6 +1,6 @@
 # framewise — Creative QC Agent
 
-Framewise turns a product-image brief into a calibrated, self-QCing production run. A human approves five examples once; Claude Sonnet 5 builds the recipe and makes the final rubric judgment, fal/OpenRouter VLMs extract visual evidence, and a bounded LangGraph workflow uses fal.ai FLUX.2 Edit to generate, revise, accept, or visibly escalate each asset.
+Framewise turns a product-image brief into a calibrated, self-QCing production run. A human approves five examples once; Claude Sonnet 5 builds the recipe and visually cross-checks the final rubric judgment, fal/OpenRouter VLMs extract preliminary evidence, and a bounded LangGraph workflow uses fal.ai FLUX.2 Edit to generate, revise, accept, or visibly escalate each asset.
 
 The app is Phase 0 of the supplied PRD: e-commerce images only. It includes all six product screens, a deterministic no-key demo, live providers, durable state, a queue worker, delivery exports, and deployment infrastructure.
 
@@ -8,7 +8,7 @@ The app is Phase 0 of the supplied PRD: e-commerce images only. It includes all 
 
 - Three-step batch wizard for 1–50 source images, reference looks, a brief, ratios, variants, and a spend cap; every selected source × ratio × variant becomes an explicit output, bounded at 200.
 - Human calibration UI with approve/reject notes and an enforced five-approval gate.
-- Claude Sonnet 5 Brief/Spec, Prompt-Synthesis, and final QC reasoning agents with schema-constrained outputs.
+- Claude Sonnet 5 Brief/Spec, Prompt-Synthesis, and final visual QC reasoning agents with schema-constrained outputs; final QC receives source and candidate pixels so weak VLM evidence cannot silently become a pass.
 - fal/OpenRouter visual QC using free Nemotron Nano 12B VL first and Qwen3-VL 8B as the automatic low-cost fallback.
 - fal.ai `fal-ai/flux-2/klein/4b/base/edit` generation with the source pinned as image 1, references explicitly style-only, exact requested output ratios, and QC correction feedback.
 - A LangGraph.js loop with two feedback retries, ranked prompt fallbacks, five total attempts, per-asset and per-batch cost caps, and `needs_review` escalation.

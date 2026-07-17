@@ -99,7 +99,7 @@ async function judgeNode(state: State): Promise<Partial<State>> {
   if (!state.outputUrl) return { terminalReason: "Generation completed without an output URL." };
   const repository = getRepository();
   const evidence = await extractQcEvidence(state.batch, state.asset, state.outputUrl);
-  const judgment = await reasonAboutQc(state.batch, evidence);
+  const judgment = await reasonAboutQc(state.batch, evidence, state.asset.sourceUrl, state.outputUrl);
   const similarity = evidence.styleSimilarity;
   const scoreValues = Object.values(judgment.scores);
   const rubricAverage = scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length;

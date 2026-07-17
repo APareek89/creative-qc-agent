@@ -153,7 +153,7 @@ export async function extractQcEvidence(batch: Batch, asset: Asset, outputUrl: s
 2. Generated candidate to audit.
 3 onward. Human-approved style examples; use them for style only, never product identity.
 
-Compare source versus candidate for geometry, parts, logo and label text, colors, material, proportions, and completeness. Compare the candidate against approved examples for composition, lighting, palette, background treatment, and shadow. List only visible evidence. Product and style similarity are independent 0–1 estimates.
+Compare source versus candidate for geometry, parts, logo and label text, colors, material, proportions, and completeness. Transcribe candidate text independently, character for character; mark unclear text as illegible and never fill it from the source. Distorted or nonsensical candidate lettering must appear in changedOrMissingDetails and technicalIssues. Compare the candidate against approved examples for composition, lighting, palette, background treatment, and shadow. List only visible evidence. Product and style similarity are independent 0–1 estimates.
 
 Creative acceptance rubric: ${JSON.stringify(batch.spec?.acceptanceRubric ?? [])}
 Return one JSON object with exactly these camelCase keys. Fill every value from the images; do not return a schema or empty template.

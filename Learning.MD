@@ -2,6 +2,16 @@
 > AGENT: add an entry whenever the main flow changes, the user reports a bug/correction,
 > or a fix was hard-won. Check here before debugging. Keep entries in 5-whys format.
 
+### 2026-07-17 — Cheap VLM evidence could overstate text fidelity
+
+**Symptom:** The Qwen fallback described an output with visibly garbled package text as nearly identical and reported no corrections.
+**Why 1:** The small evidence model inferred candidate wording from the source instead of independently reading candidate pixels.
+**Why 2:** Claude received only the VLM's text evidence, so it had no visual channel with which to challenge a confident false claim.
+**Why 3:** Provider smoke tests used obvious same-image comparisons and did not include adversarial label corruption.
+**Deepest why type:** `architecture`
+**Action taken:** Require independent candidate transcription in the VLM prompt and give Claude the source, candidate, and limited approved examples for final visual cross-checking. A live adversarial replay supplied falsely optimistic VLM evidence; Claude directly found the garbled brand, volume, and ingredient text and scored product fidelity 35/100.
+**Preventive action:** A low-cost evidence model is never a sole quality authority; high-risk visual claims must be independently grounded before deterministic policy can pass an asset.
+
 ### 2026-07-17 — Valid QC JSON used the wrong numerical scale
 
 **Symptom:** A live candidate with excellent Claude subscores received an overall score of 20.8 and retried instead of passing.
