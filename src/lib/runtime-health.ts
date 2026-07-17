@@ -50,18 +50,17 @@ async function checkStorage(): Promise<DependencyStatus> {
   }
 }
 
-async function checkGemini(): Promise<DependencyStatus> {
-  if (!env.GEMINI_API_KEY) return "missing";
+async function checkAnthropic(): Promise<DependencyStatus> {
+  if (!env.ANTHROPIC_API_KEY) return "missing";
   try {
     const response = await within(fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(env.GEMINI_AGENT_MODEL)}:generateContent`,
+      `https://api.anthropic.com/v1/models/${encodeURIComponent(env.ANTHROPIC_MODEL)}`,
       {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: "Reply with OK only." }] }],
-          generationConfig: { maxOutputTokens: 8, temperature: 0 },
-        }),
+        method: "GET",
+        headers: {
+          "anthropic-version": "2023-06-01",
+          "x-api-key": env.ANTHROPIC_API_KEY,
+        },
         signal: AbortSignal.timeout(8_000),
       },
     ));
@@ -71,11 +70,11 @@ async function checkGemini(): Promise<DependencyStatus> {
   }
 }
 
-async function checkFal(): Promise<DependencyStatus> {
+async function checkFalEndpoint(endpoint: string): Promise<DependencyStatus> {
   if (!env.FAL_KEY) return "missing";
   fal.config({ credentials: env.FAL_KEY });
   try {
-    await within(fal.queue.status(env.FAL_GENERATION_MODEL, {
+    await within(fal.queue.status(endpoint, {
       requestId: `preflight-${crypto.randomUUID()}`,
       logs: false,
     }));
@@ -96,7 +95,8 @@ export async function checkRuntimeHealth(forceDependencies = false): Promise<Run
       database: env.DATABASE_URL ? "ok" : "missing",
       redis: env.REDIS_URL ? "ok" : "missing",
       storage: env.SUPABASE_URL && env.SUPABASE_SERVICE_KEY ? "ok" : "missing",
-      gemini: env.GEMINI_API_KEY ? "ok" : "missing",
+      anthropic: env.ANTHROPIC_API_KEY ? "ok" : "missing",
+      vlm: env.FAL_KEY ? "ok" : "missing",
       fal: env.FAL_KEY ? "ok" : "missing",
     };
   }
@@ -105,14 +105,15 @@ export async function checkRuntimeHealth(forceDependencies = false): Promise<Run
     return cachedLiveHealth.value;
   }
 
-  const [database, redis, storage, gemini, falStatus] = await Promise.all([
+  const [database, redis, storage, anthropic, vlm, falStatus] = await Promise.all([
     checkDatabase(),
     checkRedis(),
     checkStorage(),
-    checkGemini(),
-    checkFal(),
+    checkAnthropic(),
+    checkFalEndpoint("openrouter/router/vision"),
+    checkFalEndpoint(env.FAL_GENERATION_MODEL),
   ]);
-  const result: RuntimeHealth = { mode: "live", web: "ok", database, redis, storage, gemini, fal: falStatus };
+  const result: RuntimeHealth = { mode: "live", web: "ok", database, redis, storage, anthropic, vlm, fal: falStatus };
   cachedLiveHealth = { value: result, expiresAt: Date.now() + LIVE_HEALTH_CACHE_MS };
   return result;
 }

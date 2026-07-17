@@ -36,7 +36,7 @@ function Dropzone({ title, description, files, setFiles, multiple = true, refere
 
   function add(fileList: FileList | File[]) {
     const incoming = [...fileList];
-    const accepted = incoming.filter((file) => file.type.startsWith("image/") || (references && file.type.startsWith("video/")));
+    const accepted = incoming.filter((file) => file.type.startsWith("image/"));
     const next = multiple ? [...files, ...accepted.map((file) => ({ file, url: URL.createObjectURL(file) }))] : accepted.slice(0, 1).map((file) => ({ file, url: URL.createObjectURL(file) }));
     setFiles(next.slice(0, references ? 10 : 50));
   }
@@ -56,9 +56,9 @@ function Dropzone({ title, description, files, setFiles, multiple = true, refere
         <strong>{title}</strong>
         <p>{description}</p>
         <span className="drop-browse"><Plus size={14} /> Browse files</span>
-        <small>{references ? "JPG, PNG, WebP, MP4 or MOV · 12 MB each · up to 10" : "JPG, PNG or WebP · 10 MB each · up to 50"}</small>
+        <small>{references ? "JPG, PNG or WebP · 10 MB each · up to 10" : "JPG, PNG or WebP · 10 MB each · up to 50"}</small>
       </button>
-      <input ref={input} hidden type="file" accept={references ? "image/jpeg,image/png,image/webp,video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp"} multiple={multiple} onChange={(event) => event.target.files && add(event.target.files)} />
+      <input ref={input} hidden type="file" accept="image/jpeg,image/png,image/webp" multiple={multiple} onChange={(event) => event.target.files && add(event.target.files)} />
     </>
   );
 }
@@ -130,7 +130,7 @@ export default function NewBatchPage() {
           {step === 2 && (
             <div className="wizard-pane">
               <span className="pane-icon"><ImagePlus size={22} /></span>
-              <p className="eyebrow">Step 2 of 3 · Optional</p><h2>Show us the target look</h2><p className="pane-intro">References teach the Spec and QC agents what “on-brand” means. Campaign images, moodboards, or short videos all work.</p>
+              <p className="eyebrow">Step 2 of 3 · Optional</p><h2>Show us the target look</h2><p className="pane-intro">Reference images teach the Spec and QC agents what “on-brand” means. Campaign stills and moodboards work well.</p>
               <Dropzone title="Add visual references" description="These are style evidence, never products to copy." files={references} setFiles={setReferences} references />
               {references.length > 0 && <><div className="upload-heading"><strong>Reference look</strong><span>{references.length} / 10</span></div><FileGrid items={references} onRemove={(index) => remove(references, index, setReferences)} /></>}
               <div className="reference-guidance"><Sparkles size={17} /><div><strong>Strong references share a visual grammar</strong><p>Choose examples with similar lighting, palette, composition, and background treatment. The agent extracts those patterns—not individual objects.</p></div></div>
@@ -139,7 +139,7 @@ export default function NewBatchPage() {
           {step === 3 && (
             <div className="wizard-pane settings-pane">
               <span className="pane-icon"><Layers3 size={22} /></span>
-              <p className="eyebrow">Step 3 of 3</p><h2>Set the creative brief</h2><p className="pane-intro">Write the outcome in plain language. Gemini will convert it into product constraints and a scored acceptance rubric.</p>
+              <p className="eyebrow">Step 3 of 3</p><h2>Set the creative brief</h2><p className="pane-intro">Write the outcome in plain language. Claude will convert it into product constraints and a scored acceptance rubric.</p>
               <label className="field"><span>Batch name</span><input value={name} maxLength={80} onChange={(event) => setName(event.target.value)} /></label>
               <label className="field"><span>Creative direction</span><textarea value={prompt} maxLength={3000} rows={6} onChange={(event) => setPrompt(event.target.value)} /><small>{prompt.length} / 3000</small></label>
               <div className="field"><span>Asset type</span><div className="choice-grid"><button type="button" className={assetType === "sku_lifestyle" ? "selected" : ""} onClick={() => setAssetType("sku_lifestyle")}><ImagePlus size={19} /><strong>SKU → lifestyle</strong><small>Preserve the product, replace the scene</small></button><button type="button" className={assetType === "multi_view" ? "selected" : ""} onClick={() => setAssetType("multi_view")}><Layers3 size={19} /><strong>Multi-view catalogue</strong><small>Create consistent angles and framing</small></button></div></div>

@@ -57,7 +57,7 @@ export default function DashboardPage() {
           <div className="hero-orbit orbit-two" />
           <div className="agent-core"><Sparkles size={30} /><span>QC</span></div>
           <div className="floating-card card-generate"><Zap size={16} /><div><strong>Generation</strong><span>FLUX.2 · attempt 2</span></div><i /></div>
-          <div className="floating-card card-judge"><ScanLine size={16} /><div><strong>Vision judge</strong><span>Gemini · 92/100</span></div><Check size={14} /></div>
+          <div className="floating-card card-judge"><ScanLine size={16} /><div><strong>Vision judge</strong><span>Nemotron + Claude · 92/100</span></div><Check size={14} /></div>
           <div className="floating-card card-recipe"><WandSparkles size={16} /><div><strong>Recipe P1</strong><span>78% win rate</span></div></div>
         </div>
       </section>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
         <article className="stat-card"><div className="stat-icon purple"><Images size={19} /></div><div><span>Assets in motion</span><strong>{data.totalAssets}</strong><small><TrendingUp size={12} /> 18 this week</small></div></article>
         <article className="stat-card"><div className="stat-icon green"><Check size={19} /></div><div><span>Autonomous pass rate</span><strong>{data.autoPassRate}%</strong><small><TrendingUp size={12} /> Quality holding</small></div></article>
         <article className="stat-card"><div className="stat-icon amber"><Clock3 size={19} /></div><div><span>Human hours saved</span><strong>{data.estimatedHoursSaved}</strong><small>At 7 min / asset</small></div></article>
-        <article className="stat-card"><div className="stat-icon blue"><Coins size={19} /></div><div><span>Total model spend</span><strong>${data.totalSpend.toFixed(2)}</strong><small>Across active batches</small></div></article>
+        <article className="stat-card"><div className="stat-icon blue"><Coins size={19} /></div><div><span>Generation spend</span><strong>${data.totalSpend.toFixed(2)}</strong><small>Across active batches</small></div></article>
       </section>
 
       {active && (

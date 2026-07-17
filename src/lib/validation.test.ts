@@ -28,6 +28,12 @@ describe("batch input guardrails", () => {
     expect(() => validateUploads([oversized], [])).toThrow("combined upload");
   });
 
+  it("rejects video references because Phase 0 visual agents consume images only", () => {
+    const source = new File(["image"], "source.png", { type: "image/png" });
+    const video = new File(["video"], "look.mp4", { type: "video/mp4" });
+    expect(() => validateUploads([source], [video])).toThrow("reference image");
+  });
+
   it("sanitizes file names used in object-storage paths", () => {
     expect(safeFileName("../../My product (final)!!.png")).toBe("My-product-final-.png");
   });

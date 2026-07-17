@@ -10,7 +10,7 @@
 
 ## Horizontal path
 
-The web tier is stateless in live mode. Postgres is authoritative, Supabase owns files, and Redis owns work. Additional web instances can be added without sticky sessions. Worker instances can be added independently; with `W` workers, effective generation concurrency is approximately `W × WORKER_CONCURRENCY`, bounded by fal.ai and Gemini quotas.
+The web tier is stateless in live mode. Postgres is authoritative, Supabase owns files, and Redis owns work. Additional web instances can be added without sticky sessions. Worker instances can be added independently; with `W` workers, effective generation concurrency is approximately `W × WORKER_CONCURRENCY`, bounded by fal.ai, OpenRouter-route, and Anthropic quotas.
 
 Start at one worker with concurrency 4. Raise concurrency only after observing provider 429s, job latency, Node heap, Postgres connection count, and queue depth. Render autoscaling responds to CPU/memory rather than BullMQ depth, so queue-depth alerts remain the meaningful capacity signal.
 
@@ -26,7 +26,7 @@ Start at one worker with concurrency 4. Raise concurrency only after observing p
 
 ## Backpressure and provider limits
 
-BullMQ owns backpressure. Keep `noeviction` and persistence enabled for Redis because queue state is not a cache. Configure fal.ai and Gemini account quotas above total worker concurrency, or reduce `WORKER_CONCURRENCY`. Exponential BullMQ retries are limited to three. LangGraph retries are a separate, quality-driven budget and remain bounded by attempts and cost.
+BullMQ owns backpressure. Keep `noeviction` and persistence enabled for Redis because queue state is not a cache. Configure fal.ai/OpenRouter and Anthropic account quotas above total worker concurrency, or reduce `WORKER_CONCURRENCY`. Exponential BullMQ retries are limited to three. The VLM adapter retries retryable 429/5xx responses once before changing models. LangGraph retries are a separate, quality-driven budget and remain bounded by attempts and cost.
 
 ## Storage and memory
 
@@ -40,7 +40,7 @@ The app uses a small connection pool per process. At several web/worker instance
 
 - Oldest waiting BullMQ job and DLQ count.
 - Batch stuck in `calibrating`, `synthesizing`, or `autonomous_running` beyond an expected duration.
-- fal.ai/Gemini latency, 429/5xx rate, schema failures, and cost per accepted asset.
+- fal.ai generation/VLM and Anthropic latency, 429/5xx rate, fallback frequency, schema failures, and cost per accepted asset.
 - Postgres connection saturation and Redis memory/persistence health.
 - Auto-pass rate drift, prompt win-rate drift, and QC-vs-human holdout agreement.
 

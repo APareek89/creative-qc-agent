@@ -26,7 +26,6 @@ export const batchActionSchema = z.discriminatedUnion("action", [
 ]);
 
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-const allowedReferenceTypes = new Set([...allowedImageTypes, "video/mp4", "video/quicktime"]);
 export const MAX_OUTPUT_ASSETS = 200;
 
 export function validateOutputCount(sourceCount: number, aspectRatioCount: number, variantsPerAsset: number): number {
@@ -59,11 +58,11 @@ export function validateUploads(sources: File[], references: File[]): void {
   }
 
   for (const file of references) {
-    if (!allowedReferenceTypes.has(file.type)) {
-      throw new Error(`${file.name} is not a supported reference file.`);
+    if (!allowedImageTypes.has(file.type)) {
+      throw new Error(`${file.name} is not a supported reference image. Phase 0 accepts JPG, PNG, or WebP.`);
     }
-    if (file.size > 12 * 1024 * 1024) {
-      throw new Error(`${file.name} is larger than the 12 MB reference limit.`);
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error(`${file.name} is larger than the 10 MB reference limit.`);
     }
   }
 }

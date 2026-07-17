@@ -2,6 +2,16 @@
 > AGENT: add an entry whenever the main flow changes, the user reports a bug/correction,
 > or a fix was hard-won. Check here before debugging. Keep entries in 5-whys format.
 
+### 2026-07-17 — Credential checks passed while real agent inference still failed
+
+**Symptom:** Provider metadata/queue probes were green, but the first real fal VLM call was blocked by OpenRouter privacy policy and the first Claude structured calls rejected unsupported schema keywords.
+**Why 1:** Readiness proved credentials and endpoint access, not model-specific inference and output-contract compatibility.
+**Why 2:** The free Nemotron route requires a data policy the account currently disallows; raw Zod JSON Schema contains constraints Anthropic direct structured outputs do not accept.
+**Why 3:** The provider adapters had not been smoke-tested with their exact production model IDs, images, and schemas.
+**Deepest why type:** `process`
+**Action taken:** Ran real minimal model calls; added Nemotron→Qwen fallback with retry and a 15-minute primary circuit, normalized Qwen evidence, sanitized Anthropic schemas while retaining Zod validation, fixed recipe params to the two FLUX settings actually consumed, and rejected Phase 0 video references that no active agent could use.
+**Preventive action:** A provider is deployment-ready only after one minimal live inference exercises the exact model, media type, and structured output used in production; non-billable health probes remain necessary but insufficient.
+
 ### 2026-07-17 — Demo output was presented beside a real upload
 
 **Symptom:** A lipstick source upload appeared beside a canned sneaker output, making the app look like a broken live generator.

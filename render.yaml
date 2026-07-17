@@ -14,7 +14,7 @@ services:
         value: production
       - key: DEMO_MODE
         value: "false"
-      - key: GEMINI_API_KEY
+      - key: ANTHROPIC_API_KEY
         sync: false
       - key: FAL_KEY
         sync: false
@@ -28,12 +28,14 @@ services:
         sync: false
       - key: SUPABASE_STORAGE_BUCKET
         value: creative-qc
-      - key: GEMINI_AGENT_MODEL
-        value: gemini-3.5-flash
-      - key: GEMINI_EMBEDDING_MODEL
-        value: gemini-embedding-2
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
       - key: FAL_GENERATION_MODEL
         value: fal-ai/flux-2/klein/4b/base/edit
+      - key: FAL_VLM_MODEL
+        value: nvidia/nemotron-nano-12b-v2-vl:free
+      - key: FAL_VLM_FALLBACK_MODEL
+        value: qwen/qwen3-vl-8b-instruct
       - key: GENERATION_COST_ESTIMATE_USD
         value: "0.018"
       - key: COST_CAP_USD_PER_BATCH
@@ -70,7 +72,7 @@ services:
         value: production
       - key: DEMO_MODE
         value: "false"
-      - key: GEMINI_API_KEY
+      - key: ANTHROPIC_API_KEY
         sync: false
       - key: FAL_KEY
         sync: false
@@ -84,12 +86,14 @@ services:
         sync: false
       - key: SUPABASE_STORAGE_BUCKET
         value: creative-qc
-      - key: GEMINI_AGENT_MODEL
-        value: gemini-3.5-flash
-      - key: GEMINI_EMBEDDING_MODEL
-        value: gemini-embedding-2
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
       - key: FAL_GENERATION_MODEL
         value: fal-ai/flux-2/klein/4b/base/edit
+      - key: FAL_VLM_MODEL
+        value: nvidia/nemotron-nano-12b-v2-vl:free
+      - key: FAL_VLM_FALLBACK_MODEL
+        value: qwen/qwen3-vl-8b-instruct
       - key: GENERATION_COST_ESTIMATE_USD
         value: "0.018"
       - key: COST_CAP_USD_PER_BATCH

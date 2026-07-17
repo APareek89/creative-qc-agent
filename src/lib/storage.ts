@@ -10,11 +10,6 @@ export interface StoredUpload {
 
 async function assertImageSignature(file: File): Promise<void> {
   const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-  if (file.type.startsWith("video/")) {
-    const hasIsoMediaHeader = String.fromCharCode(...bytes.slice(4, 8)) === "ftyp";
-    if (!hasIsoMediaHeader) throw new Error(`${file.name} does not contain valid MP4 or MOV video data.`);
-    return;
-  }
   const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
   const isWebp = String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
@@ -68,7 +63,7 @@ export async function storeGeneratedImage(batchId: string, assetId: string, imag
   const response = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) });
   if (!response.ok) throw new Error(`Could not download generated image: HTTP ${response.status}`);
   const declaredLength = Number(response.headers.get("content-length") ?? 0);
-  if (declaredLength > 25 * 1024 * 1024) throw new Error("Generated image exceeds the 25 MB storage limit.");
+  if (declaredLength > 10 * 1024 * 1024) throw new Error("Generated image exceeds the 10 MB agent-input limit.");
   const contentType = response.headers.get("content-type") ?? "image/png";
   const extension = contentType.includes("jpeg") ? "jpg" : contentType.includes("webp") ? "webp" : "png";
   const path = `${batchId}/outputs/${assetId}-${crypto.randomUUID()}.${extension}`;
@@ -76,7 +71,7 @@ export async function storeGeneratedImage(batchId: string, assetId: string, imag
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const imageBytes = await response.arrayBuffer();
-  if (imageBytes.byteLength > 25 * 1024 * 1024) throw new Error("Generated image exceeds the 25 MB storage limit.");
+  if (imageBytes.byteLength > 10 * 1024 * 1024) throw new Error("Generated image exceeds the 10 MB agent-input limit.");
   const { error } = await supabase.storage.from(env.SUPABASE_STORAGE_BUCKET).upload(path, imageBytes, {
     contentType,
     upsert: false,

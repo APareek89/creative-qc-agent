@@ -20,7 +20,7 @@ flowchart TD
   B["DURABLE INTAKE&lt;br/&gt;[DATA · Supabase and Postgres]&lt;br/&gt;in: files and settings&lt;br/&gt;out: URLs plus ratio-bound asset rows"]:::data
   C["CALIBRATION LANE&lt;br/&gt;[AGENT + LIBRARY]&lt;br/&gt;in: exact product sources, references, and brief&lt;br/&gt;out: five approved source-conditioned examples&lt;br/&gt;see diagram 02"]:::agent
   D{"FIVE APPROVED?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: approved count at least 5"}:::dec
-  E["RECIPE SYNTHESIS&lt;br/&gt;[AGENT · Gemini 3.5 Flash]&lt;br/&gt;in: approvals, rejects, notes&lt;br/&gt;out: ranked prompts and tightened rubric"]:::agent
+  E["RECIPE SYNTHESIS&lt;br/&gt;[AGENT · Claude Sonnet 5]&lt;br/&gt;in: approvals, rejects, notes&lt;br/&gt;out: ranked prompts and tightened rubric"]:::agent
   F["ATOMIC RUN CLAIM + QUEUE FAN-OUT&lt;br/&gt;[DATA + LIBRARY · Postgres and BullMQ]&lt;br/&gt;in: runnable asset IDs&lt;br/&gt;out: one claimed batch run and idempotent asset jobs"]:::data
   G["AUTONOMOUS ASSET LANE&lt;br/&gt;[LIBRARY · LangGraph.js]&lt;br/&gt;in: asset, recipe, caps&lt;br/&gt;out: pass or review&lt;br/&gt;see diagram 03"]:::data
   H{"ALL ASSETS TERMINAL?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: passed, approved, delivered, failed, or review"}:::dec
@@ -41,14 +41,14 @@ flowchart TD
 </pre>
 <h2>02 Calibration and recipe flow</h2>
 <pre class="mermaid">%% 02 Calibration and recipe flow
-%% files: src/app/api/batches/route.ts, src/lib/storage.ts, src/lib/providers/gemini.ts, src/lib/providers/fal.ts, src/lib/orchestrator/graph.ts, src/app/api/batches/[id]/approve/route.ts, src/lib/repository.ts
+%% files: src/app/api/batches/route.ts, src/lib/storage.ts, src/lib/providers/anthropic.ts, src/lib/providers/fal.ts, src/lib/orchestrator/graph.ts, src/app/api/batches/[id]/approve/route.ts, src/lib/repository.ts
 %% granularity: full
 flowchart TD
-  A["VALIDATE INTAKE&lt;br/&gt;[FUNCTION]&lt;br/&gt;in: rate-limited multipart form with 205 MB transport guard&lt;br/&gt;out: 1 to 50 images, ratios times variants at most 200 outputs, at most 10 refs and 200 MB files"]:::fn
+  A["VALIDATE INTAKE&lt;br/&gt;[FUNCTION]&lt;br/&gt;in: rate-limited multipart form with 205 MB transport guard&lt;br/&gt;out: 1 to 50 source images, at most 10 image refs, ratios times variants at most 200 outputs, 10 MB per image"]:::fn
   B["STORE FILES&lt;br/&gt;[LIBRARY · Supabase Storage]&lt;br/&gt;in: signature-checked files&lt;br/&gt;out: public trusted URLs"]:::data
   C["CREATE BATCH&lt;br/&gt;[DATA · Postgres transaction]&lt;br/&gt;in: settings and URLs&lt;br/&gt;out: batch and source times ratio times variant asset rows"]:::data
   D["ENQUEUE CALIBRATION&lt;br/&gt;[LIBRARY · BullMQ]&lt;br/&gt;in: batch ID&lt;br/&gt;out: retryable worker job"]:::data
-  E["BUILD CREATIVE SPEC&lt;br/&gt;[AGENT · Gemini 3.5 Flash]&lt;br/&gt;in: brief, sources, image or short-video references&lt;br/&gt;out: normalized spec and weighted rubric"]:::agent
+  E["BUILD CREATIVE SPEC&lt;br/&gt;[AGENT · Claude Sonnet 5]&lt;br/&gt;in: brief, sources, image references&lt;br/&gt;out: schema-constrained spec and weighted rubric"]:::agent
   F{"BATCH SPEND AVAILABLE?&lt;br/&gt;[FUNCTION + DATA]&lt;br/&gt;condition: atomic spend plus $0.018 to $0.045 input-aware estimate is within cap"}:::dec
   G["GENERATE CANDIDATE&lt;br/&gt;[LIBRARY · fal.ai FLUX.2 Klein 4B Base Edit]&lt;br/&gt;in: image 1 exact product, images 2 to 4 style only, chosen ratio, spec, 180 second timeout&lt;br/&gt;out: source-conditioned candidate image"]:::data
   H["UPSERT PROGRESS&lt;br/&gt;[DATA · Supabase and Postgres]&lt;br/&gt;in: successful candidate&lt;br/&gt;out: durable image without overwriting human decisions"]:::data
@@ -56,7 +56,7 @@ flowchart TD
   J["APPROVE OR REJECT&lt;br/&gt;[ASK · human once]&lt;br/&gt;in: candidate&lt;br/&gt;out: decision and optional note"]:::ask
   K["SAVE DECISION&lt;br/&gt;[DATA · Postgres transaction]&lt;br/&gt;in: decision&lt;br/&gt;out: approval and candidate state"]:::data
   L{"APPROVED COUNT AT LEAST 5?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: durable approvals at least 5"}:::dec
-  M["SYNTHESIZE RECIPE&lt;br/&gt;[AGENT · Gemini 3.5 Flash]&lt;br/&gt;in: positives, negatives, notes, rubric&lt;br/&gt;out: 2 to 5 ranked prompts and tightened rubric"]:::agent
+  M["SYNTHESIZE RECIPE&lt;br/&gt;[AGENT · Claude Sonnet 5]&lt;br/&gt;in: positives, negatives, notes, rubric&lt;br/&gt;out: 2 to 5 schema-constrained prompts and tightened rubric"]:::agent
   N["READY FOR AUTONOMY&lt;br/&gt;[DATA · Postgres]&lt;br/&gt;in: recipe&lt;br/&gt;out: ready batch"]:::term
   O["CALIBRATION ERROR&lt;br/&gt;[DATA · visible worker failure]&lt;br/&gt;in: fewer than 5 durable candidates&lt;br/&gt;out: retry or DLQ evidence"]:::term
   A --&gt; B --&gt; C --&gt; D --&gt; E --&gt; F
@@ -75,7 +75,7 @@ flowchart TD
 </pre>
 <h2>03 Autonomous per-asset flow</h2>
 <pre class="mermaid">%% 03 Autonomous per-asset flow
-%% files: src/lib/orchestrator/graph.ts, src/lib/providers/fal.ts, src/lib/providers/gemini.ts, src/lib/repository.ts, worker/index.ts
+%% files: src/lib/orchestrator/graph.ts, src/lib/providers/fal.ts, src/lib/providers/vlm.ts, src/lib/providers/anthropic.ts, src/lib/repository.ts, worker/index.ts
 %% granularity: full
 flowchart TD
   A["CONSUME ASSET JOB&lt;br/&gt;[LIBRARY · BullMQ worker]&lt;br/&gt;in: batch ID and asset ID&lt;br/&gt;out: hydrated durable state"]:::data
@@ -85,9 +85,9 @@ flowchart TD
   E{"BATCH CAP RESERVATION SUCCEEDS?&lt;br/&gt;[DATA · atomic Postgres update]&lt;br/&gt;condition: batch spend plus estimate at most persisted cap"}:::dec
   F["SAVE GENERATING ATTEMPT&lt;br/&gt;[DATA · Postgres transaction]&lt;br/&gt;in: prompt, params, estimated cost&lt;br/&gt;out: durable attempt boundary"]:::data
   G["GENERATE OR REVISE&lt;br/&gt;[LIBRARY · fal.ai FLUX.2 Klein 4B Base Edit]&lt;br/&gt;in: image 1 exact product, images 2 to 4 style only, requested ratio, prompt, QC correction, bounded timeout&lt;br/&gt;out: one ratio-correct source-conditioned image"]:::data
-  H["STORE OUTPUT&lt;br/&gt;[LIBRARY · Supabase Storage]&lt;br/&gt;in: trusted provider image at most 25 MB&lt;br/&gt;out: durable output URL"]:::data
-  I["RUBRIC JUDGMENT&lt;br/&gt;[AGENT · Gemini 3.5 Flash]&lt;br/&gt;in: source, output, approved refs, spec, bounded timeout&lt;br/&gt;out: five scores, feedback, corrections"]:::agent
-  J["REFERENCE SIMILARITY&lt;br/&gt;[LIBRARY · Gemini Embedding 2]&lt;br/&gt;in: output and up to five approvals&lt;br/&gt;out: maximum cosine similarity"]:::data
+  H["STORE OUTPUT&lt;br/&gt;[LIBRARY · Supabase Storage]&lt;br/&gt;in: trusted provider image at most 10 MB for downstream agents&lt;br/&gt;out: durable output URL"]:::data
+  I["VISUAL EVIDENCE&lt;br/&gt;[VLM · Nemotron free then Qwen]&lt;br/&gt;in: source, output, approved refs, rubric, bounded timeout&lt;br/&gt;out: validated visible changes, issues, and similarity&lt;br/&gt;one retry per model plus 15 minute primary circuit"]:::agent
+  J["RUBRIC REASONING&lt;br/&gt;[AGENT · Claude Sonnet 5]&lt;br/&gt;in: visual evidence plus spec&lt;br/&gt;out: schema-constrained scores, feedback, corrections"]:::agent
   K{"PASS POLICY&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: blended score at least configured threshold and fidelity at least 85"}:::dec
   L["ACCEPT AND RECORD WIN&lt;br/&gt;[DATA · Postgres]&lt;br/&gt;in: passing QC and prompt ID&lt;br/&gt;out: passed asset and updated win rate"]:::term
   M{"FEEDBACK RETRIES LEFT?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: retries below configured K, default 2"}:::dec

@@ -1,5 +1,5 @@
 %% 03 Autonomous per-asset flow
-%% files: src/lib/orchestrator/graph.ts, src/lib/providers/fal.ts, src/lib/providers/gemini.ts, src/lib/repository.ts, worker/index.ts
+%% files: src/lib/orchestrator/graph.ts, src/lib/providers/fal.ts, src/lib/providers/vlm.ts, src/lib/providers/anthropic.ts, src/lib/repository.ts, worker/index.ts
 %% granularity: full
 flowchart TD
   A["CONSUME ASSET JOB<br/>[LIBRARY · BullMQ worker]<br/>in: batch ID and asset ID<br/>out: hydrated durable state"]:::data
@@ -9,9 +9,9 @@ flowchart TD
   E{"BATCH CAP RESERVATION SUCCEEDS?<br/>[DATA · atomic Postgres update]<br/>condition: batch spend plus estimate at most persisted cap"}:::dec
   F["SAVE GENERATING ATTEMPT<br/>[DATA · Postgres transaction]<br/>in: prompt, params, estimated cost<br/>out: durable attempt boundary"]:::data
   G["GENERATE OR REVISE<br/>[LIBRARY · fal.ai FLUX.2 Klein 4B Base Edit]<br/>in: image 1 exact product, images 2 to 4 style only, requested ratio, prompt, QC correction, bounded timeout<br/>out: one ratio-correct source-conditioned image"]:::data
-  H["STORE OUTPUT<br/>[LIBRARY · Supabase Storage]<br/>in: trusted provider image at most 25 MB<br/>out: durable output URL"]:::data
-  I["RUBRIC JUDGMENT<br/>[AGENT · Gemini 3.5 Flash]<br/>in: source, output, approved refs, spec, bounded timeout<br/>out: five scores, feedback, corrections"]:::agent
-  J["REFERENCE SIMILARITY<br/>[LIBRARY · Gemini Embedding 2]<br/>in: output and up to five approvals<br/>out: maximum cosine similarity"]:::data
+  H["STORE OUTPUT<br/>[LIBRARY · Supabase Storage]<br/>in: trusted provider image at most 10 MB for downstream agents<br/>out: durable output URL"]:::data
+  I["VISUAL EVIDENCE<br/>[VLM · Nemotron free then Qwen]<br/>in: source, output, approved refs, rubric, bounded timeout<br/>out: validated visible changes, issues, and similarity<br/>one retry per model plus 15 minute primary circuit"]:::agent
+  J["RUBRIC REASONING<br/>[AGENT · Claude Sonnet 5]<br/>in: visual evidence plus spec<br/>out: schema-constrained scores, feedback, corrections"]:::agent
   K{"PASS POLICY<br/>[FUNCTION]<br/>condition: blended score at least configured threshold and fidelity at least 85"}:::dec
   L["ACCEPT AND RECORD WIN<br/>[DATA · Postgres]<br/>in: passing QC and prompt ID<br/>out: passed asset and updated win rate"]:::term
   M{"FEEDBACK RETRIES LEFT?<br/>[FUNCTION]<br/>condition: retries below configured K, default 2"}:::dec

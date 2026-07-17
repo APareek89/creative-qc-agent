@@ -6,7 +6,7 @@ flowchart TD
   B["DURABLE INTAKE<br/>[DATA · Supabase and Postgres]<br/>in: files and settings<br/>out: URLs plus ratio-bound asset rows"]:::data
   C["CALIBRATION LANE<br/>[AGENT + LIBRARY]<br/>in: exact product sources, references, and brief<br/>out: five approved source-conditioned examples<br/>see diagram 02"]:::agent
   D{"FIVE APPROVED?<br/>[FUNCTION]<br/>condition: approved count at least 5"}:::dec
-  E["RECIPE SYNTHESIS<br/>[AGENT · Gemini 3.5 Flash]<br/>in: approvals, rejects, notes<br/>out: ranked prompts and tightened rubric"]:::agent
+  E["RECIPE SYNTHESIS<br/>[AGENT · Claude Sonnet 5]<br/>in: approvals, rejects, notes<br/>out: ranked prompts and tightened rubric"]:::agent
   F["ATOMIC RUN CLAIM + QUEUE FAN-OUT<br/>[DATA + LIBRARY · Postgres and BullMQ]<br/>in: runnable asset IDs<br/>out: one claimed batch run and idempotent asset jobs"]:::data
   G["AUTONOMOUS ASSET LANE<br/>[LIBRARY · LangGraph.js]<br/>in: asset, recipe, caps<br/>out: pass or review<br/>see diagram 03"]:::data
   H{"ALL ASSETS TERMINAL?<br/>[FUNCTION]<br/>condition: passed, approved, delivered, failed, or review"}:::dec

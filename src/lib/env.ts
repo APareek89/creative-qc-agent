@@ -24,11 +24,12 @@ const optionalHttpsUrl = z.preprocess(
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DEMO_MODE: z.enum(["true", "false"]).optional(),
-  GEMINI_API_KEY: optionalString,
-  GEMINI_AGENT_MODEL: z.string().default("gemini-3.5-flash"),
-  GEMINI_EMBEDDING_MODEL: z.string().default("gemini-embedding-2"),
+  ANTHROPIC_API_KEY: optionalString,
+  ANTHROPIC_MODEL: z.string().default("claude-sonnet-5"),
   FAL_KEY: optionalString,
   FAL_GENERATION_MODEL: z.string().default("fal-ai/flux-2/klein/4b/base/edit"),
+  FAL_VLM_MODEL: z.string().default("nvidia/nemotron-nano-12b-v2-vl:free"),
+  FAL_VLM_FALLBACK_MODEL: z.string().default("qwen/qwen3-vl-8b-instruct"),
   GENERATION_COST_ESTIMATE_USD: z.coerce.number().positive().max(10).default(0.018),
   DATABASE_URL: optionalDatabaseConnectionString,
   REDIS_URL: optionalRedisConnectionString,
@@ -56,7 +57,7 @@ if (!parsed.success) {
 export const env = parsed.data;
 
 const liveConfiguration = [
-  env.GEMINI_API_KEY,
+  env.ANTHROPIC_API_KEY,
   env.FAL_KEY,
   env.DATABASE_URL,
   env.REDIS_URL,
@@ -70,7 +71,7 @@ export const isDemoMode =
 
 export function assertLiveEnvironment(): void {
   const missing = [
-    ["GEMINI_API_KEY", env.GEMINI_API_KEY],
+    ["ANTHROPIC_API_KEY", env.ANTHROPIC_API_KEY],
     ["FAL_KEY", env.FAL_KEY],
     ["DATABASE_URL", env.DATABASE_URL],
     ["REDIS_URL", env.REDIS_URL],

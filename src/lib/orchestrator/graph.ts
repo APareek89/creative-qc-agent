@@ -1,6 +1,7 @@
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import { estimateGenerationCost, generateImage } from "@/lib/providers/fal";
-import { compareToApproved, createCreativeSpec, judgeAsset, synthesizePriorityPrompts } from "@/lib/providers/gemini";
+import { createCreativeSpec, reasonAboutQc, synthesizePriorityPrompts } from "@/lib/providers/anthropic";
+import { extractQcEvidence } from "@/lib/providers/vlm";
 import { getRepository } from "@/lib/repository";
 import { storeGeneratedImage } from "@/lib/storage";
 import type { Asset, Batch, CalibrationCandidate, QcResult } from "@/lib/types";
@@ -97,8 +98,9 @@ async function generateNode(state: State): Promise<Partial<State>> {
 async function judgeNode(state: State): Promise<Partial<State>> {
   if (!state.outputUrl) return { terminalReason: "Generation completed without an output URL." };
   const repository = getRepository();
-  const judgment = await judgeAsset(state.batch, state.asset, state.outputUrl);
-  const similarity = await compareToApproved(state.batch, state.outputUrl);
+  const evidence = await extractQcEvidence(state.batch, state.asset, state.outputUrl);
+  const judgment = await reasonAboutQc(state.batch, evidence);
+  const similarity = evidence.styleSimilarity;
   const scoreValues = Object.values(judgment.scores);
   const rubricAverage = scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length;
   const overallScore = Math.round((rubricAverage * 0.8 + similarity * 100 * 0.2) * 10) / 10;

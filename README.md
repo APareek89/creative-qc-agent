@@ -1,6 +1,6 @@
 # framewise — Creative QC Agent
 
-Framewise turns a product-image brief into a calibrated, self-QCing production run. A human approves five examples once; Gemini synthesizes the recipe and judges every later image, while a bounded LangGraph workflow uses fal.ai FLUX.2 Edit to generate, revise, accept, or visibly escalate each asset.
+Framewise turns a product-image brief into a calibrated, self-QCing production run. A human approves five examples once; Claude Sonnet 5 builds the recipe and makes the final rubric judgment, fal/OpenRouter VLMs extract visual evidence, and a bounded LangGraph workflow uses fal.ai FLUX.2 Edit to generate, revise, accept, or visibly escalate each asset.
 
 The app is Phase 0 of the supplied PRD: e-commerce images only. It includes all six product screens, a deterministic no-key demo, live providers, durable state, a queue worker, delivery exports, and deployment infrastructure.
 
@@ -8,7 +8,8 @@ The app is Phase 0 of the supplied PRD: e-commerce images only. It includes all 
 
 - Three-step batch wizard for 1–50 source images, reference looks, a brief, ratios, variants, and a spend cap; every selected source × ratio × variant becomes an explicit output, bounded at 200.
 - Human calibration UI with approve/reject notes and an enforced five-approval gate.
-- Gemini Brief/Spec, Prompt-Synthesis, QC, and image-embedding agents.
+- Claude Sonnet 5 Brief/Spec, Prompt-Synthesis, and final QC reasoning agents with schema-constrained outputs.
+- fal/OpenRouter visual QC using free Nemotron Nano 12B VL first and Qwen3-VL 8B as the automatic low-cost fallback.
 - fal.ai `fal-ai/flux-2/klein/4b/base/edit` generation with the source pinned as image 1, references explicitly style-only, exact requested output ratios, and QC correction feedback.
 - A LangGraph.js loop with two feedback retries, ranked prompt fallbacks, five total attempts, per-asset and per-batch cost caps, and `needs_review` escalation.
 - BullMQ retries, stable job boundaries, a dead-letter queue, graceful worker shutdown, and terminal batch reconciliation.
@@ -45,8 +46,8 @@ Core live variables:
 
 | Variable | Responsibility |
 |---|---|
-| `GEMINI_API_KEY` | **Required LLM/VLM** for spec creation, prompt synthesis, QC judgment, and multimodal embeddings |
-| `FAL_KEY` | **Required generation provider** credential |
+| `ANTHROPIC_API_KEY` | **Required reasoning LLM** for spec creation, prompt synthesis, and final QC judgment |
+| `FAL_KEY` | **Required generation + VLM provider** credential |
 | `DATABASE_URL` | Postgres state for batches, attempts, QC, approvals, and prompts |
 | `REDIS_URL` | BullMQ jobs, retries, and dead-letter queue |
 | `SUPABASE_URL` | Object-storage project URL |
@@ -58,9 +59,10 @@ Model and guardrail tuning:
 
 | Variable | Default |
 |---|---:|
-| `GEMINI_AGENT_MODEL` | `gemini-3.5-flash` |
-| `GEMINI_EMBEDDING_MODEL` | `gemini-embedding-2` |
+| `ANTHROPIC_MODEL` | `claude-sonnet-5` |
 | `FAL_GENERATION_MODEL` | `fal-ai/flux-2/klein/4b/base/edit` |
+| `FAL_VLM_MODEL` | `nvidia/nemotron-nano-12b-v2-vl:free` |
+| `FAL_VLM_FALLBACK_MODEL` | `qwen/qwen3-vl-8b-instruct` |
 | `GENERATION_COST_ESTIMATE_USD` | `0.018` base for one 1 MP source + one 1 MP output; each supplied reference adds `0.009` |
 | `COST_CAP_USD_PER_BATCH` | `5` |
 | `COST_CAP_USD_PER_ASSET` | `0.5` |
@@ -74,6 +76,8 @@ Model and guardrail tuning:
 | `LOG_LEVEL` | `info` |
 
 The batch cap entered in the UI is persisted per batch. The environment defaults set server-side ceilings and per-asset behavior.
+
+The displayed hard cap currently covers fal image-generation calls, which are the dominant variable cost. Anthropic token usage and fal/OpenRouter VLM token cost are logged per request but are not yet included in the generation-spend meter. The free Nemotron route can require provider-side input logging; accounts with stricter OpenRouter privacy guardrails automatically use the configured Qwen fallback instead.
 
 ## Quality commands
 
@@ -93,4 +97,4 @@ npm run eval:qc
 
 ## Phase boundary
 
-Authentication, multi-tenant billing, reusable cross-batch recipes, public APIs/MCP, video production, team workflows, and model fallbacks are intentionally later phases. The data model and queue boundaries leave room for them without pretending they are part of Phase 0.
+Authentication, multi-tenant billing, reusable cross-batch recipes, public APIs/MCP, video production, and team workflows are intentionally later phases. The data model and queue boundaries leave room for them without pretending they are part of Phase 0.

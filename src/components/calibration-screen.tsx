@@ -108,7 +108,7 @@ export function CalibrationScreen({ batchId }: { batchId: string }) {
         <div className="synth-orb"><span /><WandSparkles size={36} /></div>
         <p className="eyebrow">Five approvals captured</p>
         <h1>Synthesizing your recipe<span>…</span></h1>
-        <p>Gemini is comparing positive and negative evidence, tightening the QC rubric, and ranking the most repeatable FLUX strategies.</p>
+        <p>Claude is comparing positive and negative evidence, tightening the QC rubric, and ranking the most repeatable FLUX strategies.</p>
         <div className="synth-steps"><span className="done"><Check size={14} /> Style tokens extracted</span><span className="active"><LoaderCircle className="spin" size={14} /> Ranking priority prompts</span><span>Calibrating acceptance thresholds</span></div>
       </div>
     );

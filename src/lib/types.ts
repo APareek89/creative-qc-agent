@@ -218,12 +218,13 @@ export interface RuntimeHealth {
   database: "ok" | "missing" | "error";
   redis: "ok" | "missing" | "error";
   storage: "ok" | "missing" | "error";
-  gemini: "ok" | "missing" | "error";
+  anthropic: "ok" | "missing" | "error";
+  vlm: "ok" | "missing" | "error";
   fal: "ok" | "missing" | "error";
 }
 
 export function isRuntimeHealthy(health: RuntimeHealth): boolean {
-  return health.mode === "live" && [health.database, health.redis, health.storage, health.gemini, health.fal].every((status) => status === "ok");
+  return health.mode === "live" && [health.database, health.redis, health.storage, health.anthropic, health.vlm, health.fal].every((status) => status === "ok");
 }
 
 export function getBatchCounts(batch: Batch): Record<AssetStatus, number> {
