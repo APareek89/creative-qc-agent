@@ -81,6 +81,18 @@ export interface AnthropicQcJudgment {
   confidence: number;
 }
 
+export function normalizeQcJudgmentScale(judgment: AnthropicQcJudgment): AnthropicQcJudgment {
+  const scores = Object.values(judgment.scores);
+  if (!scores.every((score) => score >= 0 && score <= 1)) return judgment;
+
+  return {
+    ...judgment,
+    scores: Object.fromEntries(
+      Object.entries(judgment.scores).map(([name, score]) => [name, Math.round(score * 1_000) / 10]),
+    ) as unknown as QcScores,
+  };
+}
+
 function assertTrustedImageUrl(value: string): void {
   const parsed = new URL(value);
   if (parsed.protocol !== "https:") throw new Error("The reasoning agent requires HTTPS image URLs.");
@@ -272,9 +284,14 @@ export async function reasonAboutQc(batch: Batch, evidence: VlmQcEvidence): Prom
   }
   if (!batch.spec) throw new Error("A Creative Spec is required before QC.");
   const prompt = `Act as the final QC reasoner. The separate vision model supplied observable evidence; do not claim to have seen the images yourself.
-Score the generated candidate against the Creative Spec. Product fidelity is strict: changed text/logo, missing parts, wrong color/material, or altered geometry must be penalized. Feedback must be concise and directly usable by the image-edit model. Return scores and corrections only; deterministic application code will make the pass/fail decision.
+Score the generated candidate against the Creative Spec. Every score must use a 0–100 scale, where 95 means excellent; never return 0–1 probability decimals for scores. Product fidelity is strict: changed text/logo, missing parts, wrong color/material, or altered geometry must be penalized. Feedback must be concise and directly usable by the image-edit model. Return scores and corrections only; deterministic application code will make the pass/fail decision.
 
 Creative Spec: ${JSON.stringify(batch.spec)}
 Vision evidence: ${JSON.stringify(evidence)}`;
-  return structuredResponse(qcSchema, prompt, [], 1_800);
+  const judgment = await structuredResponse(qcSchema, prompt, [], 1_800);
+  const normalized = normalizeQcJudgmentScale(judgment);
+  if (normalized !== judgment) {
+    console.warn(JSON.stringify({ event: "anthropic_qc_score_scale_normalized", model: env.ANTHROPIC_MODEL }));
+  }
+  return normalized;
 }

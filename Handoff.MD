@@ -1,5 +1,5 @@
 # Handoff.MD — Creative QC Agent
-last-synced: `25c94af · Render provider migration live`
+last-synced: `b1c49bc · live Render provider migration reconciled before QC-scale checkpoint`
 > AGENT: read fully at session start; reconcile commits after `last-synced`.
 > Update before checkpoint commits or phase end; keep this current snapshot under ~40 lines.
 
@@ -9,9 +9,11 @@ last-synced: `25c94af · Render provider migration live`
 - ✅ Structured outputs are validated twice: Anthropic-compatible constrained JSON first, then strict Zod business validation.
 - ✅ Visual QC tries free Nemotron, retries retryable failures, falls back to Qwen, and opens a 15-minute primary circuit after failure so one unavailable model does not stall every asset.
 - ✅ Phase 0 accepts image references only; every generated image is capped at 10 MB so Claude and VLM downstream steps can consume it.
-- ✅ Verification: 8 test files / 27 tests, TypeScript, production build, 3 valid Mermaid diagrams, and 0 npm vulnerabilities.
-- ✅ Full FMEA at `a6aa51e`: 0 P0, 0 P1, 17 tracked P2 findings in `docs/FMEA.md`.
-- ✅ Render web and Starter worker are live on `25c94af`; public health reports DB, Redis, Storage, Anthropic, VLM, and fal all `ok`.
+- ✅ A real Render batch completed the entire durable path: 10 calibration candidates, 5 approvals, 4 synthesized prompts, 3 autonomous generation/QC attempts, and a correct $0.25-cap stop at $0.234.
+- ✅ That run exposed Claude's valid-but-wrong 0–1 QC score scale; provider-boundary normalization, explicit 0–100 prompting, an observability event, and regression coverage are implemented.
+- ✅ Verification: 8 test files / 29 tests, TypeScript, production build, 3 valid Mermaid diagrams, and 0 npm vulnerabilities.
+- ✅ Full FMEA: 0 open P0, 0 open P1, 17 tracked P2 findings; the live-run QC-scale P1 is closed in `docs/FMEA.md`.
+- ✅ Render web and Starter worker are live; public health reports DB, Redis, Storage, Anthropic, VLM, and fal all `ok`.
 
 ## Live dependency status
 - ✅ Postgres, Redis, public Supabase Storage, Anthropic, fal generation, and fal VLM endpoint pass live preflight; Claude real inference and all three structured agent contracts passed smoke tests.
@@ -30,7 +32,8 @@ last-synced: `25c94af · Render provider migration live`
 ## Pending
 - ✅ AGENT: Provider migration is pushed, Render environments are synced, both services are live, and `/`, `/new`, `/architecture`, and `/api/health` return 200/healthy.
 - 🧑 USER: If the zero-cost Nemotron route is required, allow its provider data policy in OpenRouter; until then Qwen is the working automatic fallback.
-- 🧑 USER: Run one low-cap real batch in the live UI and judge product fidelity; paid golden-image evals remain approval-only.
+- ✅ AGENT: The authorized $0.25 live workflow eval is recorded in `Loop.MD`; the screenshot source deliberately exercised UI-artifact detection and is not a product-quality golden set.
+- 🧑 USER: Judge product fidelity with a clean isolated product image; paid golden-image evals remain approval-only.
 - 🧑 USER: Decide whether to turn on the free Loop; paid golden-image evals remain approval-only.
 
 **Session efficiency:** 🎯 ~50% provider architecture · 🔧 ~30% Render/provider validation · 🔁 ~20% schema/fallback hardening

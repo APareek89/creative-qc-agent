@@ -45,3 +45,4 @@ CI: `none yet`
 ## Run journal (paid/slow checks only)
 | Date | Hypothesis | Result | Cost note |
 |---|---|---|---|
+| 2026-07-17 | A one-source, one-ratio live Render batch will create at least five durable source-conditioned calibration candidates, accept five approvals, synthesize a recipe, and finish one autonomous asset without demo substitution. | PASS for orchestration; batch `cacd5657-d1e6-444a-812a-09f15bb58059` persisted 10 candidates, 5 approvals, 4 prompts, and 1 terminal needs-review asset after 3 real generation/QC attempts. The run also exposed a Claude 0–1 versus 0–100 score-scale ambiguity; provider-boundary normalization and regression coverage were added before handoff. | $0.234 generation spend against a $0.25 hard cap; the next paid call was correctly blocked. |

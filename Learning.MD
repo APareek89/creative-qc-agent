@@ -2,6 +2,16 @@
 > AGENT: add an entry whenever the main flow changes, the user reports a bug/correction,
 > or a fix was hard-won. Check here before debugging. Keep entries in 5-whys format.
 
+### 2026-07-17 — Valid QC JSON used the wrong numerical scale
+
+**Symptom:** A live candidate with excellent Claude subscores received an overall score of 20.8 and retried instead of passing.
+**Why 1:** Claude returned score values such as `0.98` and `0.95`, while deterministic application math expects 0–100 values.
+**Why 2:** The 0–100 Zod bounds also accept every 0–1 value, so schema validation could not distinguish the semantic scale.
+**Why 3:** Provider contract tests covered JSON shape and bounds but not numerical scale interpretation.
+**Deepest why type:** `architecture`
+**Action taken:** Made the prompt state the scale with a concrete example, normalized an entirely 0–1 QC score vector at the Anthropic boundary, emitted an observability event when normalization occurs, and added regression tests for both 0–1 and native 0–100 responses.
+**Preventive action:** Every bounded LLM number must define its unit and scale in prompt, adapter normalization, and tests; syntactic range validation alone is not a semantic contract.
+
 ### 2026-07-17 — Credential checks passed while real agent inference still failed
 
 **Symptom:** Provider metadata/queue probes were green, but the first real fal VLM call was blocked by OpenRouter privacy policy and the first Claude structured calls rejected unsupported schema keywords.
