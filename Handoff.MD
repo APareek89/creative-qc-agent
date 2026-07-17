@@ -1,5 +1,5 @@
 # Handoff.MD — Creative QC Agent
-last-synced: `5be8dab · Claude/fal VLM provider checkpoint ready`
+last-synced: `25c94af · Render provider migration live`
 > AGENT: read fully at session start; reconcile commits after `last-synced`.
 > Update before checkpoint commits or phase end; keep this current snapshot under ~40 lines.
 
@@ -11,6 +11,7 @@ last-synced: `5be8dab · Claude/fal VLM provider checkpoint ready`
 - ✅ Phase 0 accepts image references only; every generated image is capped at 10 MB so Claude and VLM downstream steps can consume it.
 - ✅ Verification: 8 test files / 27 tests, TypeScript, production build, 3 valid Mermaid diagrams, and 0 npm vulnerabilities.
 - ✅ Full FMEA at `a6aa51e`: 0 P0, 0 P1, 17 tracked P2 findings in `docs/FMEA.md`.
+- ✅ Render web and Starter worker are live on `25c94af`; public health reports DB, Redis, Storage, Anthropic, VLM, and fal all `ok`.
 
 ## Live dependency status
 - ✅ Postgres, Redis, public Supabase Storage, Anthropic, fal generation, and fal VLM endpoint pass live preflight; Claude real inference and all three structured agent contracts passed smoke tests.
@@ -27,8 +28,9 @@ last-synced: `5be8dab · Claude/fal VLM provider checkpoint ready`
 - 2026-07-17 — Phase 0 reference uploads are images only; accepting unusable video references would create a silent-quality failure.
 
 ## Pending
-- 🤖 AGENT: Commit, push, sync Anthropic/VLM environment variables to both Render services, resume the worker, and verify public health.
+- ✅ AGENT: Provider migration is pushed, Render environments are synced, both services are live, and `/`, `/new`, `/architecture`, and `/api/health` return 200/healthy.
 - 🧑 USER: If the zero-cost Nemotron route is required, allow its provider data policy in OpenRouter; until then Qwen is the working automatic fallback.
+- 🧑 USER: Run one low-cap real batch in the live UI and judge product fidelity; paid golden-image evals remain approval-only.
 - 🧑 USER: Decide whether to turn on the free Loop; paid golden-image evals remain approval-only.
 
-**Session efficiency:** 🎯 ~55% provider architecture · 🔧 ~25% live-provider validation · 🔁 ~20% schema/fallback hardening
+**Session efficiency:** 🎯 ~50% provider architecture · 🔧 ~30% Render/provider validation · 🔁 ~20% schema/fallback hardening
