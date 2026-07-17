@@ -10,7 +10,7 @@ last-synced: `unborn · initial Render deployment checkpoint in progress`
 - ✅ fal uses the cheapest selected edit endpoint (`flux-2/klein/4b/base/edit`), pins image 1 as product identity, treats images 2–4 as style-only, and reserves $0.018–$0.045 by input count.
 - ✅ Every source × selected ratio × variant is persisted and generated at the requested dimensions, with a 200-output ceiling.
 - ✅ Run claiming, enqueue rollback, calibration decision preservation, terminal worker state, retry budgets, and delivery guards hardened.
-- ✅ Render web service created; the worker's `tsx` launcher is a production dependency so production installs retain the runtime.
+- ✅ Render services created; web builds explicitly include TypeScript tooling, Node is pinned to verified 22.x, and the worker's `tsx` launcher is a production dependency.
 - ✅ Full 12-category FMEA: 0 P0, 0 P1, 13 tracked P2s at `docs/FMEA.md`, source snapshot `34549737ed4e`.
 
 ## Live dependency status

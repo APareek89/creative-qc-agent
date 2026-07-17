@@ -71,3 +71,13 @@
 **Deepest why type:** `design`
 **Action taken:** Make `GEMINI_API_KEY` explicitly required for all reasoning/vision agents and label OpenAI only as an optional fallback.
 **Preventive action:** Group every environment variable by runtime responsibility and whether the core path can start without it.
+
+### 2026-07-17 — Render production install omitted the web build toolchain
+
+**Symptom:** Render compiled the Next.js bundle, then failed type checking because TypeScript and React type packages were absent.
+**Why 1:** The service environment sets `NODE_ENV=production`, so plain `npm ci` omitted development dependencies.
+**Why 2:** Next.js needs TypeScript and type declarations during its production build even though they are not application runtime dependencies.
+**Why 3:** The deployment command was only verified in a local environment that already contained development dependencies.
+**Deepest why type:** `process`
+**Action taken:** Make the web build run `npm ci --include=dev`, keep the worker launcher in production dependencies, and pin Render to the locally verified Node 22 line.
+**Preventive action:** Verify deployment install semantics separately from local builds whenever production environment flags can change dependency selection.
