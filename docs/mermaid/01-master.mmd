@@ -1,0 +1,26 @@
+%% 01 Creative QC Agent master flow
+%% files: src/app/api/batches/route.ts, src/lib/orchestrator/graph.ts, worker/index.ts, src/app/api/batches/[id]/delivery/route.ts
+%% granularity: master
+flowchart TD
+  A["NEW BATCH<br/>[FUNCTION]<br/>in: sources, selected ratios, 1 to 4 variants, references, brief, caps<br/>out: rate-limited batch of at most 200 outputs"]:::fn
+  B["DURABLE INTAKE<br/>[DATA · Supabase and Postgres]<br/>in: files and settings<br/>out: URLs plus ratio-bound asset rows"]:::data
+  C["CALIBRATION LANE<br/>[AGENT + LIBRARY]<br/>in: exact product sources, references, and brief<br/>out: five approved source-conditioned examples<br/>see diagram 02"]:::agent
+  D{"FIVE APPROVED?<br/>[FUNCTION]<br/>condition: approved count at least 5"}:::dec
+  E["RECIPE SYNTHESIS<br/>[AGENT · Gemini 3.5 Flash]<br/>in: approvals, rejects, notes<br/>out: ranked prompts and tightened rubric"]:::agent
+  F["ATOMIC RUN CLAIM + QUEUE FAN-OUT<br/>[DATA + LIBRARY · Postgres and BullMQ]<br/>in: runnable asset IDs<br/>out: one claimed batch run and idempotent asset jobs"]:::data
+  G["AUTONOMOUS ASSET LANE<br/>[LIBRARY · LangGraph.js]<br/>in: asset, recipe, caps<br/>out: pass or review<br/>see diagram 03"]:::data
+  H{"ALL ASSETS TERMINAL?<br/>[FUNCTION]<br/>condition: passed, approved, delivered, failed, or review"}:::dec
+  I["DELIVERY<br/>[FUNCTION]<br/>in: accepted assets<br/>out: ZIP, manifest, safe CDN CSV, delivered state"]:::term
+  J["VISIBLE REVIEW QUEUE<br/>[DATA · Postgres]<br/>in: exhausted asset state<br/>out: reason and attempt evidence"]:::term
+  A --> B --> C --> D
+  D -->|"No"| C
+  D -->|"Yes"| E --> F --> G --> H
+  G -->|"Caps exhausted"| J --> H
+  H -->|"No"| G
+  H -->|"Yes"| I
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;

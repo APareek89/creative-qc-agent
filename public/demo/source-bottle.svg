@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900">
+  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#eee9df"/><stop offset="1" stop-color="#cfc6b7"/></linearGradient><linearGradient id="g" x2="1"><stop stop-color="#97856e"/><stop offset=".5" stop-color="#d0c1a9"/><stop offset="1" stop-color="#806e5b"/></linearGradient></defs>
+  <rect width="900" height="900" fill="url(#b)"/><ellipse cx="450" cy="740" rx="180" ry="34" fill="#393024" opacity=".22"/>
+  <rect x="327" y="226" width="246" height="500" rx="64" fill="url(#g)" stroke="#6b5c4c" stroke-width="5"/><rect x="375" y="128" width="150" height="122" rx="24" fill="#292724"/><rect x="399" y="82" width="102" height="62" rx="13" fill="#56514b"/>
+  <rect x="352" y="405" width="196" height="174" rx="8" fill="#f7f0e5"/><text x="450" y="466" text-anchor="middle" fill="#26221d" font-family="Arial" font-size="28" letter-spacing="8">KIN</text><text x="450" y="514" text-anchor="middle" fill="#665c4f" font-family="Arial" font-size="15" letter-spacing="3">BOTANICAL</text>
+</svg>

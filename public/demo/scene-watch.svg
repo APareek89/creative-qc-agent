@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100">
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#111217"/><stop offset=".58" stop-color="#4b4540"/><stop offset="1" stop-color="#b39c82"/></linearGradient><linearGradient id="m" x2="1" y2="1"><stop stop-color="#fff9ed"/><stop offset=".5" stop-color="#6e675d"/><stop offset="1" stop-color="#d8cdbd"/></linearGradient></defs>
+  <rect width="900" height="1100" fill="url(#bg)"/><path d="M0 755l900-210v555H0z" fill="#796b5f"/><circle cx="719" cy="230" r="270" fill="#a58cff" opacity=".12"/>
+  <g transform="translate(0 95) rotate(14 450 500)"><path d="M385 70h130l32 254-194 3zM353 576l194-3-32 257H385z" fill="#292929"/><circle cx="450" cy="450" r="210" fill="url(#m)" stroke="#4c4741" stroke-width="10"/><circle cx="450" cy="450" r="169" fill="#101113"/><circle cx="450" cy="450" r="9" fill="#ddd4c6"/><path d="M450 450l-12-104M450 450l88 48" stroke="#ddd4c6" stroke-width="9" stroke-linecap="round"/><path d="M450 306v18M594 450h-18M450 594v-18M306 450h18" stroke="#8d7fff" stroke-width="8"/></g>
+  <text x="68" y="1015" fill="#eee7db" font-size="22" font-family="Arial" letter-spacing="7">NIGHT EDITION / 03</text>
+</svg>

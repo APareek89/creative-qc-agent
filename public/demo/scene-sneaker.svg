@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100">
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#171922"/><stop offset=".55" stop-color="#685e55"/><stop offset="1" stop-color="#b7a48d"/></linearGradient><linearGradient id="shoe"><stop stop-color="#fffdf6"/><stop offset="1" stop-color="#bcb5a9"/></linearGradient><filter id="blur"><feGaussianBlur stdDeviation="18"/></filter></defs>
+  <rect width="900" height="1100" fill="url(#bg)"/><circle cx="700" cy="160" r="235" fill="#d9c5aa" opacity=".18"/><path d="M0 820l900-160v440H0z" fill="#9b8875"/><ellipse cx="493" cy="831" rx="310" ry="65" fill="#130f0c" opacity=".35" filter="url(#blur)"/>
+  <g transform="translate(16 150) rotate(-8 450 550)"><path d="M157 526c64-8 130-34 179-84l84-112c18-24 53-28 77-10l84 61c39 28 85 46 132 51l55 7c46 6 78 47 74 92l-4 39c-4 38-34 67-71 70l-474 38c-80 6-145-61-127-138z" fill="url(#shoe)" stroke="#605c56" stroke-width="7"/><path d="M177 587c174 33 425 7 650-22" fill="none" stroke="#282827" stroke-width="26" stroke-linecap="round"/><circle cx="710" cy="530" r="18" fill="#7869ff"/></g>
+  <text x="75" y="1010" fill="#f8f1e7" font-size="24" font-family="Arial" letter-spacing="8">AUTUMN / 01</text>
+</svg>

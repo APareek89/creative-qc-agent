@@ -1,0 +1,32 @@
+%% 02 Calibration and recipe flow
+%% files: src/app/api/batches/route.ts, src/lib/storage.ts, src/lib/providers/gemini.ts, src/lib/providers/fal.ts, src/lib/orchestrator/graph.ts, src/app/api/batches/[id]/approve/route.ts, src/lib/repository.ts
+%% granularity: full
+flowchart TD
+  A["VALIDATE INTAKE<br/>[FUNCTION]<br/>in: rate-limited multipart form with 205 MB transport guard<br/>out: 1 to 50 images, ratios times variants at most 200 outputs, at most 10 refs and 200 MB files"]:::fn
+  B["STORE FILES<br/>[LIBRARY · Supabase Storage]<br/>in: signature-checked files<br/>out: public trusted URLs"]:::data
+  C["CREATE BATCH<br/>[DATA · Postgres transaction]<br/>in: settings and URLs<br/>out: batch and source times ratio times variant asset rows"]:::data
+  D["ENQUEUE CALIBRATION<br/>[LIBRARY · BullMQ]<br/>in: batch ID<br/>out: retryable worker job"]:::data
+  E["BUILD CREATIVE SPEC<br/>[AGENT · Gemini 3.5 Flash]<br/>in: brief, sources, image or short-video references<br/>out: normalized spec and weighted rubric"]:::agent
+  F{"BATCH SPEND AVAILABLE?<br/>[FUNCTION + DATA]<br/>condition: atomic spend plus $0.018 to $0.045 input-aware estimate is within cap"}:::dec
+  G["GENERATE CANDIDATE<br/>[LIBRARY · fal.ai FLUX.2 Klein 4B Base Edit]<br/>in: image 1 exact product, images 2 to 4 style only, chosen ratio, spec, 180 second timeout<br/>out: source-conditioned candidate image"]:::data
+  H["UPSERT PROGRESS<br/>[DATA · Supabase and Postgres]<br/>in: successful candidate<br/>out: durable image without overwriting human decisions"]:::data
+  I{"TEN CANDIDATES OR CAP?<br/>[FUNCTION]<br/>condition: 10 complete or spend unavailable"}:::dec
+  J["APPROVE OR REJECT<br/>[ASK · human once]<br/>in: candidate<br/>out: decision and optional note"]:::ask
+  K["SAVE DECISION<br/>[DATA · Postgres transaction]<br/>in: decision<br/>out: approval and candidate state"]:::data
+  L{"APPROVED COUNT AT LEAST 5?<br/>[FUNCTION]<br/>condition: durable approvals at least 5"}:::dec
+  M["SYNTHESIZE RECIPE<br/>[AGENT · Gemini 3.5 Flash]<br/>in: positives, negatives, notes, rubric<br/>out: 2 to 5 ranked prompts and tightened rubric"]:::agent
+  N["READY FOR AUTONOMY<br/>[DATA · Postgres]<br/>in: recipe<br/>out: ready batch"]:::term
+  O["CALIBRATION ERROR<br/>[DATA · visible worker failure]<br/>in: fewer than 5 durable candidates<br/>out: retry or DLQ evidence"]:::term
+  A --> B --> C --> D --> E --> F
+  F -->|"Yes"| G --> H --> I
+  I -->|"Need more"| F
+  I -->|"Enough to review"| J --> K --> L
+  L -->|"No"| J
+  L -->|"Yes"| M --> N
+  F -->|"No and fewer than 5"| O
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;

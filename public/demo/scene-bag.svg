@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100">
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#141414"/><stop offset=".45" stop-color="#5d4f48"/><stop offset="1" stop-color="#c1a88f"/></linearGradient><linearGradient id="l" x2="1" y2="1"><stop stop-color="#a7684b"/><stop offset="1" stop-color="#4c291e"/></linearGradient><filter id="s"><feGaussianBlur stdDeviation="22"/></filter></defs>
+  <rect width="900" height="1100" fill="url(#bg)"/><rect y="765" width="900" height="335" fill="#9a826f"/><path d="M610 0c-90 250 10 370 220 475" fill="none" stroke="#2e3a2e" stroke-width="125" opacity=".42"/><ellipse cx="464" cy="852" rx="295" ry="55" fill="#24150f" opacity=".32" filter="url(#s)"/>
+  <g transform="translate(0 110)"><path d="M206 359h488l75 371H131z" fill="url(#l)" stroke="#3d231a" stroke-width="8"/><path d="M300 379c0-174 300-174 300 0" fill="none" stroke="#5b3426" stroke-width="40"/><path d="M314 380c0-136 272-136 272 0" fill="none" stroke="#b27b60" stroke-width="9"/><circle cx="450" cy="520" r="29" fill="#d0a861"/><path d="M450 520v88" stroke="#d0a861" stroke-width="8"/></g>
+  <text x="65" y="1018" fill="#f4eadd" font-size="23" font-family="Arial" letter-spacing="7">ATELIER / 04</text>
+</svg>

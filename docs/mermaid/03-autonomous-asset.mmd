@@ -1,0 +1,43 @@
+%% 03 Autonomous per-asset flow
+%% files: src/lib/orchestrator/graph.ts, src/lib/providers/fal.ts, src/lib/providers/gemini.ts, src/lib/repository.ts, worker/index.ts
+%% granularity: full
+flowchart TD
+  A["CONSUME ASSET JOB<br/>[LIBRARY · BullMQ worker]<br/>in: batch ID and asset ID<br/>out: hydrated durable state"]:::data
+  B{"OUTPUT ALREADY AWAITING QC?<br/>[FUNCTION]<br/>condition: status is qc and output URL exists"}:::dec
+  C["RESUME QC WITHOUT REGENERATION<br/>[FUNCTION]<br/>in: stored output<br/>out: QC-ready state"]:::fn
+  D{"ATTEMPT AND ASSET CAP OK?<br/>[FUNCTION]<br/>condition: attempts below 5 and input-aware $0.018 to $0.045 estimate at most cap"}:::dec
+  E{"BATCH CAP RESERVATION SUCCEEDS?<br/>[DATA · atomic Postgres update]<br/>condition: batch spend plus estimate at most persisted cap"}:::dec
+  F["SAVE GENERATING ATTEMPT<br/>[DATA · Postgres transaction]<br/>in: prompt, params, estimated cost<br/>out: durable attempt boundary"]:::data
+  G["GENERATE OR REVISE<br/>[LIBRARY · fal.ai FLUX.2 Klein 4B Base Edit]<br/>in: image 1 exact product, images 2 to 4 style only, requested ratio, prompt, QC correction, bounded timeout<br/>out: one ratio-correct source-conditioned image"]:::data
+  H["STORE OUTPUT<br/>[LIBRARY · Supabase Storage]<br/>in: trusted provider image at most 25 MB<br/>out: durable output URL"]:::data
+  I["RUBRIC JUDGMENT<br/>[AGENT · Gemini 3.5 Flash]<br/>in: source, output, approved refs, spec, bounded timeout<br/>out: five scores, feedback, corrections"]:::agent
+  J["REFERENCE SIMILARITY<br/>[LIBRARY · Gemini Embedding 2]<br/>in: output and up to five approvals<br/>out: maximum cosine similarity"]:::data
+  K{"PASS POLICY<br/>[FUNCTION]<br/>condition: blended score at least configured threshold and fidelity at least 85"}:::dec
+  L["ACCEPT AND RECORD WIN<br/>[DATA · Postgres]<br/>in: passing QC and prompt ID<br/>out: passed asset and updated win rate"]:::term
+  M{"FEEDBACK RETRIES LEFT?<br/>[FUNCTION]<br/>condition: retries below configured K, default 2"}:::dec
+  N{"NEXT RANKED PROMPT EXISTS?<br/>[FUNCTION]<br/>condition: another recipe and attempts remain"}:::dec
+  O["PREPARE CORRECTION<br/>[FUNCTION]<br/>in: QC corrections<br/>out: feedback-guided next state"]:::fn
+  P["NEEDS REVIEW<br/>[DATA · Postgres]<br/>in: cap or exhausted strategy<br/>out: terminal asset and visible reason"]:::term
+  Q{"ALL SIBLINGS TERMINAL?<br/>[FUNCTION]<br/>condition: no queued, generating, or qc assets"}:::dec
+  R["BATCH DONE AND DELIVERABLE<br/>[DATA · Postgres]<br/>in: final terminal asset, then successful export<br/>out: completed timestamp and delivered states"]:::term
+  A --> B
+  B -->|"Yes"| C --> I
+  B -->|"No"| D
+  D -->|"Yes"| E
+  D -->|"No"| P
+  E -->|"Yes"| F --> G --> H --> I --> J --> K
+  E -->|"No"| P
+  K -->|"Pass"| L --> Q
+  K -->|"Fail"| M
+  M -->|"Yes"| O --> D
+  M -->|"No"| N
+  N -->|"Yes"| O
+  N -->|"No"| P --> Q
+  Q -->|"Yes"| R
+  Q -->|"No"| A
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;

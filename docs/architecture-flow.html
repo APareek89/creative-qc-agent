@@ -1,0 +1,127 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Architecture Flow</title>
+<style>
+ body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:1100px;margin:0 auto;padding:24px 20px 80px;color:#1f2937;background:#fafafa}
+ h1{border-bottom:2px solid #e5e7eb;padding-bottom:8px}
+ h2{margin-top:36px;border-top:1px solid #e5e7eb;padding-top:18px;color:#111827}
+ pre.mermaid{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:14px 0 28px;overflow:auto;text-align:center}
+ .hint{position:sticky;top:0;background:#fff8e1;border:1px solid #f0d264;border-radius:6px;padding:8px 12px;font-size:13px;color:#5a4a00;margin-bottom:16px}
+ .mermaid svg{max-width:100%;height:auto}
+</style></head><body>
+<div class="hint">Tip: use Ctrl/Cmd + scroll or browser zoom to enlarge a diagram.</div>
+<h1>Architecture Flow</h1>
+<h2>01 Creative QC Agent master flow</h2>
+<pre class="mermaid">%% 01 Creative QC Agent master flow
+%% files: src/app/api/batches/route.ts, src/lib/orchestrator/graph.ts, worker/index.ts, src/app/api/batches/[id]/delivery/route.ts
+%% granularity: master
+flowchart TD
+  A["NEW BATCH&lt;br/&gt;[FUNCTION]&lt;br/&gt;in: sources, selected ratios, 1 to 4 variants, references, brief, caps&lt;br/&gt;out: rate-limited batch of at most 200 outputs"]:::fn
+  B["DURABLE INTAKE&lt;br/&gt;[DATA · Supabase and Postgres]&lt;br/&gt;in: files and settings&lt;br/&gt;out: URLs plus ratio-bound asset rows"]:::data
+  C["CALIBRATION LANE&lt;br/&gt;[AGENT + LIBRARY]&lt;br/&gt;in: exact product sources, references, and brief&lt;br/&gt;out: five approved source-conditioned examples&lt;br/&gt;see diagram 02"]:::agent
+  D{"FIVE APPROVED?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: approved count at least 5"}:::dec
+  E["RECIPE SYNTHESIS&lt;br/&gt;[AGENT · Gemini 3.5 Flash]&lt;br/&gt;in: approvals, rejects, notes&lt;br/&gt;out: ranked prompts and tightened rubric"]:::agent
+  F["ATOMIC RUN CLAIM + QUEUE FAN-OUT&lt;br/&gt;[DATA + LIBRARY · Postgres and BullMQ]&lt;br/&gt;in: runnable asset IDs&lt;br/&gt;out: one claimed batch run and idempotent asset jobs"]:::data
+  G["AUTONOMOUS ASSET LANE&lt;br/&gt;[LIBRARY · LangGraph.js]&lt;br/&gt;in: asset, recipe, caps&lt;br/&gt;out: pass or review&lt;br/&gt;see diagram 03"]:::data
+  H{"ALL ASSETS TERMINAL?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: passed, approved, delivered, failed, or review"}:::dec
+  I["DELIVERY&lt;br/&gt;[FUNCTION]&lt;br/&gt;in: accepted assets&lt;br/&gt;out: ZIP, manifest, safe CDN CSV, delivered state"]:::term
+  J["VISIBLE REVIEW QUEUE&lt;br/&gt;[DATA · Postgres]&lt;br/&gt;in: exhausted asset state&lt;br/&gt;out: reason and attempt evidence"]:::term
+  A --&gt; B --&gt; C --&gt; D
+  D --&gt;|"No"| C
+  D --&gt;|"Yes"| E --&gt; F --&gt; G --&gt; H
+  G --&gt;|"Caps exhausted"| J --&gt; H
+  H --&gt;|"No"| G
+  H --&gt;|"Yes"| I
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+</pre>
+<h2>02 Calibration and recipe flow</h2>
+<pre class="mermaid">%% 02 Calibration and recipe flow
+%% files: src/app/api/batches/route.ts, src/lib/storage.ts, src/lib/providers/gemini.ts, src/lib/providers/fal.ts, src/lib/orchestrator/graph.ts, src/app/api/batches/[id]/approve/route.ts, src/lib/repository.ts
+%% granularity: full
+flowchart TD
+  A["VALIDATE INTAKE&lt;br/&gt;[FUNCTION]&lt;br/&gt;in: rate-limited multipart form with 205 MB transport guard&lt;br/&gt;out: 1 to 50 images, ratios times variants at most 200 outputs, at most 10 refs and 200 MB files"]:::fn
+  B["STORE FILES&lt;br/&gt;[LIBRARY · Supabase Storage]&lt;br/&gt;in: signature-checked files&lt;br/&gt;out: public trusted URLs"]:::data
+  C["CREATE BATCH&lt;br/&gt;[DATA · Postgres transaction]&lt;br/&gt;in: settings and URLs&lt;br/&gt;out: batch and source times ratio times variant asset rows"]:::data
+  D["ENQUEUE CALIBRATION&lt;br/&gt;[LIBRARY · BullMQ]&lt;br/&gt;in: batch ID&lt;br/&gt;out: retryable worker job"]:::data
+  E["BUILD CREATIVE SPEC&lt;br/&gt;[AGENT · Gemini 3.5 Flash]&lt;br/&gt;in: brief, sources, image or short-video references&lt;br/&gt;out: normalized spec and weighted rubric"]:::agent
+  F{"BATCH SPEND AVAILABLE?&lt;br/&gt;[FUNCTION + DATA]&lt;br/&gt;condition: atomic spend plus $0.018 to $0.045 input-aware estimate is within cap"}:::dec
+  G["GENERATE CANDIDATE&lt;br/&gt;[LIBRARY · fal.ai FLUX.2 Klein 4B Base Edit]&lt;br/&gt;in: image 1 exact product, images 2 to 4 style only, chosen ratio, spec, 180 second timeout&lt;br/&gt;out: source-conditioned candidate image"]:::data
+  H["UPSERT PROGRESS&lt;br/&gt;[DATA · Supabase and Postgres]&lt;br/&gt;in: successful candidate&lt;br/&gt;out: durable image without overwriting human decisions"]:::data
+  I{"TEN CANDIDATES OR CAP?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: 10 complete or spend unavailable"}:::dec
+  J["APPROVE OR REJECT&lt;br/&gt;[ASK · human once]&lt;br/&gt;in: candidate&lt;br/&gt;out: decision and optional note"]:::ask
+  K["SAVE DECISION&lt;br/&gt;[DATA · Postgres transaction]&lt;br/&gt;in: decision&lt;br/&gt;out: approval and candidate state"]:::data
+  L{"APPROVED COUNT AT LEAST 5?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: durable approvals at least 5"}:::dec
+  M["SYNTHESIZE RECIPE&lt;br/&gt;[AGENT · Gemini 3.5 Flash]&lt;br/&gt;in: positives, negatives, notes, rubric&lt;br/&gt;out: 2 to 5 ranked prompts and tightened rubric"]:::agent
+  N["READY FOR AUTONOMY&lt;br/&gt;[DATA · Postgres]&lt;br/&gt;in: recipe&lt;br/&gt;out: ready batch"]:::term
+  O["CALIBRATION ERROR&lt;br/&gt;[DATA · visible worker failure]&lt;br/&gt;in: fewer than 5 durable candidates&lt;br/&gt;out: retry or DLQ evidence"]:::term
+  A --&gt; B --&gt; C --&gt; D --&gt; E --&gt; F
+  F --&gt;|"Yes"| G --&gt; H --&gt; I
+  I --&gt;|"Need more"| F
+  I --&gt;|"Enough to review"| J --&gt; K --&gt; L
+  L --&gt;|"No"| J
+  L --&gt;|"Yes"| M --&gt; N
+  F --&gt;|"No and fewer than 5"| O
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+</pre>
+<h2>03 Autonomous per-asset flow</h2>
+<pre class="mermaid">%% 03 Autonomous per-asset flow
+%% files: src/lib/orchestrator/graph.ts, src/lib/providers/fal.ts, src/lib/providers/gemini.ts, src/lib/repository.ts, worker/index.ts
+%% granularity: full
+flowchart TD
+  A["CONSUME ASSET JOB&lt;br/&gt;[LIBRARY · BullMQ worker]&lt;br/&gt;in: batch ID and asset ID&lt;br/&gt;out: hydrated durable state"]:::data
+  B{"OUTPUT ALREADY AWAITING QC?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: status is qc and output URL exists"}:::dec
+  C["RESUME QC WITHOUT REGENERATION&lt;br/&gt;[FUNCTION]&lt;br/&gt;in: stored output&lt;br/&gt;out: QC-ready state"]:::fn
+  D{"ATTEMPT AND ASSET CAP OK?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: attempts below 5 and input-aware $0.018 to $0.045 estimate at most cap"}:::dec
+  E{"BATCH CAP RESERVATION SUCCEEDS?&lt;br/&gt;[DATA · atomic Postgres update]&lt;br/&gt;condition: batch spend plus estimate at most persisted cap"}:::dec
+  F["SAVE GENERATING ATTEMPT&lt;br/&gt;[DATA · Postgres transaction]&lt;br/&gt;in: prompt, params, estimated cost&lt;br/&gt;out: durable attempt boundary"]:::data
+  G["GENERATE OR REVISE&lt;br/&gt;[LIBRARY · fal.ai FLUX.2 Klein 4B Base Edit]&lt;br/&gt;in: image 1 exact product, images 2 to 4 style only, requested ratio, prompt, QC correction, bounded timeout&lt;br/&gt;out: one ratio-correct source-conditioned image"]:::data
+  H["STORE OUTPUT&lt;br/&gt;[LIBRARY · Supabase Storage]&lt;br/&gt;in: trusted provider image at most 25 MB&lt;br/&gt;out: durable output URL"]:::data
+  I["RUBRIC JUDGMENT&lt;br/&gt;[AGENT · Gemini 3.5 Flash]&lt;br/&gt;in: source, output, approved refs, spec, bounded timeout&lt;br/&gt;out: five scores, feedback, corrections"]:::agent
+  J["REFERENCE SIMILARITY&lt;br/&gt;[LIBRARY · Gemini Embedding 2]&lt;br/&gt;in: output and up to five approvals&lt;br/&gt;out: maximum cosine similarity"]:::data
+  K{"PASS POLICY&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: blended score at least configured threshold and fidelity at least 85"}:::dec
+  L["ACCEPT AND RECORD WIN&lt;br/&gt;[DATA · Postgres]&lt;br/&gt;in: passing QC and prompt ID&lt;br/&gt;out: passed asset and updated win rate"]:::term
+  M{"FEEDBACK RETRIES LEFT?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: retries below configured K, default 2"}:::dec
+  N{"NEXT RANKED PROMPT EXISTS?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: another recipe and attempts remain"}:::dec
+  O["PREPARE CORRECTION&lt;br/&gt;[FUNCTION]&lt;br/&gt;in: QC corrections&lt;br/&gt;out: feedback-guided next state"]:::fn
+  P["NEEDS REVIEW&lt;br/&gt;[DATA · Postgres]&lt;br/&gt;in: cap or exhausted strategy&lt;br/&gt;out: terminal asset and visible reason"]:::term
+  Q{"ALL SIBLINGS TERMINAL?&lt;br/&gt;[FUNCTION]&lt;br/&gt;condition: no queued, generating, or qc assets"}:::dec
+  R["BATCH DONE AND DELIVERABLE&lt;br/&gt;[DATA · Postgres]&lt;br/&gt;in: final terminal asset, then successful export&lt;br/&gt;out: completed timestamp and delivered states"]:::term
+  A --&gt; B
+  B --&gt;|"Yes"| C --&gt; I
+  B --&gt;|"No"| D
+  D --&gt;|"Yes"| E
+  D --&gt;|"No"| P
+  E --&gt;|"Yes"| F --&gt; G --&gt; H --&gt; I --&gt; J --&gt; K
+  E --&gt;|"No"| P
+  K --&gt;|"Pass"| L --&gt; Q
+  K --&gt;|"Fail"| M
+  M --&gt;|"Yes"| O --&gt; D
+  M --&gt;|"No"| N
+  N --&gt;|"Yes"| O
+  N --&gt;|"No"| P --&gt; Q
+  Q --&gt;|"Yes"| R
+  Q --&gt;|"No"| A
+  classDef agent fill:#dbeafe,stroke:#2563eb,color:#0b2a5b;
+  classDef fn fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef dec fill:#f3e8ff,stroke:#9333ea,color:#2a0a4a;
+  classDef term fill:#e5e7eb,stroke:#6b7280,color:#111827;
+  classDef ask fill:#cffafe,stroke:#0891b2,color:#083344;
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#2a0a4a;
+</pre>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad:false, securityLevel:"loose", theme:"base",
+  themeVariables:{ fontFamily:"-apple-system, Segoe UI, Roboto, sans-serif", fontSize:"14px" } });
+await mermaid.run({ querySelector:"pre.mermaid" });
+</script>
+</body></html>

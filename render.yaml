@@ -1,0 +1,110 @@
+services:
+  - type: web
+    name: creative-qc-agent
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    numInstances: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "false"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FAL_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: creative-qc
+      - key: GEMINI_AGENT_MODEL
+        value: gemini-3.5-flash
+      - key: GEMINI_EMBEDDING_MODEL
+        value: gemini-embedding-2
+      - key: FAL_GENERATION_MODEL
+        value: fal-ai/flux-2/klein/4b/base/edit
+      - key: GENERATION_COST_ESTIMATE_USD
+        value: "0.018"
+      - key: COST_CAP_USD_PER_BATCH
+        value: "5"
+      - key: COST_CAP_USD_PER_ASSET
+        value: "0.5"
+      - key: MAX_ATTEMPTS_PER_ASSET
+        value: "5"
+      - key: FEEDBACK_RETRIES
+        value: "2"
+      - key: QC_PASS_SCORE
+        value: "80"
+      - key: WORKER_CONCURRENCY
+        value: "4"
+      - key: BATCH_CREATION_LIMIT_PER_HOUR
+        value: "5"
+      - key: PROVIDER_TIMEOUT_MS
+        value: "180000"
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://creative-qc-agent.onrender.com
+
+  - type: worker
+    name: creative-qc-worker
+    runtime: node
+    region: singapore
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm run worker
+    autoDeployTrigger: commit
+    maxShutdownDelaySeconds: 300
+    numInstances: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "false"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FAL_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: creative-qc
+      - key: GEMINI_AGENT_MODEL
+        value: gemini-3.5-flash
+      - key: GEMINI_EMBEDDING_MODEL
+        value: gemini-embedding-2
+      - key: FAL_GENERATION_MODEL
+        value: fal-ai/flux-2/klein/4b/base/edit
+      - key: GENERATION_COST_ESTIMATE_USD
+        value: "0.018"
+      - key: COST_CAP_USD_PER_BATCH
+        value: "5"
+      - key: COST_CAP_USD_PER_ASSET
+        value: "0.5"
+      - key: MAX_ATTEMPTS_PER_ASSET
+        value: "5"
+      - key: FEEDBACK_RETRIES
+        value: "2"
+      - key: QC_PASS_SCORE
+        value: "80"
+      - key: WORKER_CONCURRENCY
+        value: "4"
+      - key: BATCH_CREATION_LIMIT_PER_HOUR
+        value: "5"
+      - key: PROVIDER_TIMEOUT_MS
+        value: "180000"

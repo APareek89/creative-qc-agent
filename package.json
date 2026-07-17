@@ -1,0 +1,53 @@
+{
+  "name": "creative-qc-agent",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "dev:live": "npm run preflight && next dev",
+    "build": "next build",
+    "start": "next start",
+    "start:live": "npm run preflight && next start",
+    "worker": "tsx worker/start.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "eval:qc": "tsx scripts/qc-agreement.ts",
+    "preflight": "tsx scripts/preflight.ts",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "db:migrate": "tsx scripts/migrate.ts"
+  },
+  "dependencies": {
+    "@fal-ai/client": "1.10.1",
+    "@google/genai": "2.12.0",
+    "@langchain/langgraph": "1.4.8",
+    "@supabase/supabase-js": "2.110.7",
+    "bullmq": "5.80.6",
+    "drizzle-orm": "0.45.2",
+    "ioredis": "5.11.1",
+    "jszip": "3.10.1",
+    "lucide-react": "1.24.0",
+    "next": "16.2.10",
+    "postgres": "3.4.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "jsdom": "29.1.1",
+    "tsx": "4.23.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "overrides": {
+    "postcss": "8.5.19"
+  }
+}
